@@ -5,7 +5,7 @@ export default function Nav() {
   return (
     <nav className="nav">
       <NavLink to="/feed" className="nav-brand">
-        SignalHire
+        JobRadar
       </NavLink>
       <div className="nav-links">
         <NavLink to="/feed" className={({ isActive }) => isActive ? 'active' : ''}>

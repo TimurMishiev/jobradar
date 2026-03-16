@@ -51,10 +51,10 @@ cp packages/api/.env.example packages/api/.env
 cp packages/web/.env.example packages/web/.env
 
 # Edit packages/api/.env and set your DATABASE_URL
-# Example: DATABASE_URL=postgresql://youruser@localhost:5432/signalhire
+# Example: DATABASE_URL=postgresql://youruser@localhost:5432/jobradar
 
 # Create the database (psql must be on your PATH)
-createdb signalhire
+createdb jobradar
 
 # Run migrations
 pnpm db:migrate

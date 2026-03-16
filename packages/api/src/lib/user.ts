@@ -5,7 +5,7 @@ import { prisma } from './prisma';
 // ensures the single-user mode is unambiguous even if the DB somehow has
 // multiple rows (which shouldn't happen, but findFirst() order is undefined).
 
-const LOCAL_USER_EMAIL = 'local@signalhire.local';
+const LOCAL_USER_EMAIL = 'local@jobradar.local';
 
 export async function getLocalUser() {
   return prisma.user.findUnique({ where: { email: LOCAL_USER_EMAIL } });

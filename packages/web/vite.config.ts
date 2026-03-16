@@ -7,7 +7,7 @@ export default defineConfig({
   resolve: {
     alias: {
       // Resolve shared package to its source directly — no build step needed
-      '@signalhire/shared': resolve(__dirname, '../shared/src'),
+      '@jobradar/shared': resolve(__dirname, '../shared/src'),
     },
   },
   server: {

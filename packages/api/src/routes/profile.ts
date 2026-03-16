@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/prisma';
 import { getOrCreateLocalUser } from '../lib/user';
-import type { RemotePreference } from '@signalhire/shared';
+import type { RemotePreference } from '@jobradar/shared';
 
 const VALID_REMOTE_PREFS: RemotePreference[] = ['REMOTE_ONLY', 'HYBRID', 'ONSITE', 'ANY'];
 

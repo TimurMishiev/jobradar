@@ -1,4 +1,4 @@
-import type { NormalizedJob } from '@signalhire/shared';
+import type { NormalizedJob } from '@jobradar/shared';
 
 export type JobAction = 'SAVED' | 'IGNORED' | 'APPLIED';
 

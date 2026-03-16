@@ -1,14 +1,14 @@
 {
-  "name": "signalhire",
+  "name": "jobradar",
   "private": true,
   "version": "0.0.1",
   "scripts": {
-    "dev:api": "pnpm --filter @signalhire/api dev",
-    "dev:web": "pnpm --filter @signalhire/web dev",
-    "build": "pnpm --filter @signalhire/shared build && pnpm --filter @signalhire/api build && pnpm --filter @signalhire/web build",
-    "db:migrate": "pnpm --filter @signalhire/api db:migrate",
-    "db:generate": "pnpm --filter @signalhire/api db:generate",
-    "db:studio": "pnpm --filter @signalhire/api db:studio"
+    "dev:api": "pnpm --filter @jobradar/api dev",
+    "dev:web": "pnpm --filter @jobradar/web dev",
+    "build": "pnpm --filter @jobradar/shared build && pnpm --filter @jobradar/api build && pnpm --filter @jobradar/web build",
+    "db:migrate": "pnpm --filter @jobradar/api db:migrate",
+    "db:generate": "pnpm --filter @jobradar/api db:generate",
+    "db:studio": "pnpm --filter @jobradar/api db:studio"
   },
   "devDependencies": {
     "typescript": "^5.6.0"

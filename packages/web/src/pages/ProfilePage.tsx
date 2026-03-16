@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '../lib/api';
-import type { UserProfile } from '@signalhire/shared';
+import type { UserProfile } from '@jobradar/shared';
 import TagInput from '../components/TagInput';
 
 const REMOTE_OPTIONS: { value: UserProfile['remotePreference']; label: string }[] = [
@@ -88,7 +88,7 @@ export default function ProfilePage() {
       <div className="page-header">
         <h2 className="page-title">Profile</h2>
         <p className="page-subtitle">
-          Tell SignalHire what you're looking for. This will power job scoring in Phase 4.
+          Tell JobRadar what you're looking for. This will power job scoring in Phase 4.
         </p>
       </div>
 

@@ -1,4 +1,4 @@
-import type { SeniorityLevel, RemoteType, EmploymentType } from '@signalhire/shared';
+import type { SeniorityLevel, RemoteType, EmploymentType } from '@jobradar/shared';
 import { CompanyConfig } from '../companies';
 import { RawGreenhouseJob, RawLeverJob, RawAshbyJob } from '../connectors/types';
 
