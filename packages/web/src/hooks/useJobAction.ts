@@ -8,6 +8,7 @@ export function useJobAction(job: JobWithDetails) {
   const currentAction = job.userActions[0]?.action ?? null;
 
   const invalidate = () => {
+    // Invalidate all jobs queries (feed, saved, applied) and the job detail cache
     queryClient.invalidateQueries({ queryKey: ['jobs'] });
     queryClient.invalidateQueries({ queryKey: ['job', job.id] });
   };
@@ -19,12 +20,14 @@ export function useJobAction(job: JobWithDetails) {
         body: JSON.stringify({ action }),
       }),
     onSuccess: invalidate,
+    onError: (err) => console.error('[setAction] failed:', err),
   });
 
   const removeAction = useMutation({
     mutationFn: () =>
-      apiFetch(`/api/jobs/${job.id}/action`, { method: 'DELETE' }),
+      apiFetch<void>(`/api/jobs/${job.id}/action`, { method: 'DELETE' }),
     onSuccess: invalidate,
+    onError: (err) => console.error('[removeAction] failed:', err),
   });
 
   const isPending = setAction.isPending || removeAction.isPending;

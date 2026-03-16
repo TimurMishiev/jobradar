@@ -20,10 +20,7 @@ export default function Nav({ theme, onToggleTheme }: Props) {
           Feed
         </NavLink>
         <NavLink to="/saved" className={({ isActive }) => isActive ? 'active' : ''}>
-          Saved
-        </NavLink>
-        <NavLink to="/applied" className={({ isActive }) => isActive ? 'active' : ''}>
-          Applied
+          Tracker
         </NavLink>
         <NavLink to="/profile" className={({ isActive }) => isActive ? 'active' : ''}>
           Profile

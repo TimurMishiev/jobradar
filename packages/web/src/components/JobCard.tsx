@@ -90,7 +90,7 @@ export default function JobCard({ job }: Props) {
 
       {job.tags.length > 0 && (
         <div className="job-tags">
-          {job.tags.slice(0, 5).map((tag) => (
+          {[...new Set(job.tags)].slice(0, 5).map((tag) => (
             <span key={tag} className="job-tag">{tag}</span>
           ))}
         </div>

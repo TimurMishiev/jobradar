@@ -6,7 +6,8 @@ export async function apiFetch<T>(path: string, options?: RequestInit): Promise<
   const res = await fetch(path, {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
+      // Only set Content-Type for requests that have a body
+      ...(options?.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
       ...(options?.headers as Record<string, string>),
     },
   });
