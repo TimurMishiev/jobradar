@@ -22,7 +22,6 @@ const SENIORITY_OPTIONS = [
   { value: 'principal', label: 'Principal' },
 ];
 
-const COMPANIES = ['Anthropic', 'OpenAI', 'Anduril', 'Palantir', 'Shield AI'];
 
 const POSTED_WITHIN_OPTIONS = [
   { value: '1', label: 'Last 24 hours' },
@@ -35,6 +34,13 @@ const POSTED_WITHIN_OPTIONS = [
 
 export default function FeedPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+
+  const { data: companiesData } = useQuery({
+    queryKey: ['companies'],
+    queryFn: () => apiFetch<Array<{ name: string; slug: string }>>('/api/ingest/companies'),
+    staleTime: Infinity,
+  });
+  const companies = companiesData?.map((c) => c.name).sort() ?? [];
 
   const company = searchParams.get('company') ?? '';
   const remoteType = searchParams.get('remoteType') ?? '';
@@ -130,7 +136,7 @@ export default function FeedPage() {
           onChange={(e) => setParam('company', e.target.value)}
         >
           <option value="">All companies</option>
-          {COMPANIES.map((c) => (
+          {companies.map((c) => (
             <option key={c} value={c}>{c}</option>
           ))}
         </select>
