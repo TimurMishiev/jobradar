@@ -73,3 +73,46 @@ export interface RawAshbyJob {
 export interface AshbyBoardResponse {
   jobs: RawAshbyJob[];
 }
+
+// ─── Raw Workday job shape ─────────────────────────────────────────────────────
+// Actual shape from Workday CXS API (confirmed against accenture.wd103)
+
+export interface RawWorkdayJob {
+  title: string;
+  externalPath: string;         // e.g. '/job/Paris/Software-Engineer_R00123'
+  postedOn: string | null;      // 'Posted Today', 'Posted 2 Days Ago', etc.
+  bulletFields: string[];       // [requisitionId, location, ...]
+}
+
+export interface WorkdayResponse {
+  total: number;
+  jobPostings: RawWorkdayJob[];
+}
+
+// ─── Raw Meta job shape ───────────────────────────────────────────────────────
+
+export interface RawMetaJob {
+  id: string;
+  title: string;
+  sub_teams: string[];
+  team_title: string | null;
+  locations: string[];
+  remote_type: string | null;
+  type: string | null;          // 'Full-Time', 'Part-Time'
+  post_date: string | null;     // 'YYYY-MM-DD'
+  url: string;
+}
+
+// ─── Raw Google job shape ─────────────────────────────────────────────────────
+
+export interface RawGoogleJob {
+  name: string;                 // 'jobs/12345'
+  title: string;
+  locations: Array<{ display: string }>;
+  applicationInfo: { uris: string[] };
+  description: string | null;
+  qualifications: string | null;
+  responsibilities: string | null;
+  publishTime: string | null;   // ISO datetime
+  categories: string[];
+}

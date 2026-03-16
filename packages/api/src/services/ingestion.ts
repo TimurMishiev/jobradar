@@ -3,11 +3,17 @@ import { TARGET_COMPANIES, CompanyConfig, AtsType } from '../companies';
 import { GreenhouseConnector } from '../connectors/greenhouse';
 import { LeverConnector } from '../connectors/lever';
 import { AshbyConnector } from '../connectors/ashby';
-import { RawGreenhouseJob, RawLeverJob, RawAshbyJob } from '../connectors/types';
+import { WorkdayConnector } from '../connectors/workday';
+import { MetaConnector } from '../connectors/meta';
+import { GoogleConnector } from '../connectors/google';
+import { RawGreenhouseJob, RawLeverJob, RawAshbyJob, RawWorkdayJob, RawMetaJob, RawGoogleJob } from '../connectors/types';
 import {
   normalizeGreenhouseJob,
   normalizeLeverJob,
   normalizeAshbyJob,
+  normalizeWorkdayJob,
+  normalizeMetaJob,
+  normalizeGoogleJob,
   NormalizedJobInput,
 } from './normalization';
 
@@ -44,6 +50,21 @@ async function fetchAndNormalize(company: CompanyConfig): Promise<NormalizedJobI
       const connector = new AshbyConnector(company);
       const jobs = await connector.fetch() as RawAshbyJob[];
       return jobs.map((j) => normalizeAshbyJob(j, company));
+    }
+    case 'workday': {
+      const connector = new WorkdayConnector(company);
+      const jobs = await connector.fetch() as RawWorkdayJob[];
+      return jobs.map((j) => normalizeWorkdayJob(j, company));
+    }
+    case 'meta': {
+      const connector = new MetaConnector(company);
+      const jobs = await connector.fetch() as RawMetaJob[];
+      return jobs.map((j) => normalizeMetaJob(j, company));
+    }
+    case 'google': {
+      const connector = new GoogleConnector(company);
+      const jobs = await connector.fetch() as RawGoogleJob[];
+      return jobs.map((j) => normalizeGoogleJob(j, company));
     }
     default: {
       const _exhaustive: never = company.ats;
@@ -94,7 +115,7 @@ export async function runIngestion(slugFilter?: string[]): Promise<IngestionSumm
   const results: IngestionCompanyResult[] = [];
   for (const company of companies) {
     process.stdout.write(
-      `[ingestion] fetching ${company.name} (${company.ats}:${company.boardToken})\n`,
+      `[ingestion] fetching ${company.name} (${company.ats})\n`,
     );
     const result = await ingestCompany(company);
     process.stdout.write(

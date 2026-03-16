@@ -6,6 +6,10 @@ import { getLocalUser, getOrCreateLocalUser } from '../lib/user';
 const VALID_ACTIONS = ['SAVED', 'IGNORED', 'APPLIED'] as const;
 type JobAction = (typeof VALID_ACTIONS)[number];
 
+const VALID_REMOTE_TYPES = new Set(['remote', 'hybrid', 'onsite', 'unknown']);
+const VALID_SENIORITY = new Set(['intern', 'junior', 'mid', 'senior', 'staff', 'principal', 'director', 'manager']);
+const NOTES_MAX_LENGTH = 5_000;
+
 export async function jobRoutes(app: FastifyInstance) {
   // GET /api/jobs
   // Query params:
@@ -45,12 +49,21 @@ export async function jobRoutes(app: FastifyInstance) {
         ? undefined
         : new Date(Date.now() - postedWithinDays * 24 * 60 * 60 * 1_000);
 
+    // Only pass allowlisted values to Prisma to prevent unintended filter behaviour
+    const remoteType = query.remoteType && VALID_REMOTE_TYPES.has(query.remoteType)
+      ? query.remoteType : undefined;
+    const seniority = query.seniority && VALID_SENIORITY.has(query.seniority)
+      ? query.seniority : undefined;
+    // company is a free-text label (e.g. 'Anthropic') — safe because Prisma parameterizes it
+    const company = typeof query.company === 'string' && query.company.length <= 100
+      ? query.company : undefined;
+
     const where: Prisma.JobWhereInput = {
       isActive: true,
       ...(postedAfter ? { postedAt: { gte: postedAfter } } : {}),
-      ...(query.company ? { company: query.company } : {}),
-      ...(query.remoteType ? { remoteType: query.remoteType } : {}),
-      ...(query.seniority ? { seniorityGuess: query.seniority } : {}),
+      ...(company ? { company } : {}),
+      ...(remoteType ? { remoteType } : {}),
+      ...(seniority ? { seniorityGuess: seniority } : {}),
     };
 
     // Filter to jobs matching a specific user action
@@ -116,7 +129,8 @@ export async function jobRoutes(app: FastifyInstance) {
     }
 
     const action = body.action as JobAction;
-    const notes = typeof body.notes === 'string' ? body.notes : undefined;
+    const rawNotes = typeof body.notes === 'string' ? body.notes.slice(0, NOTES_MAX_LENGTH) : undefined;
+    const notes = rawNotes?.trim() || undefined;
     const user = await getOrCreateLocalUser();
 
     const result = await prisma.userJobAction.upsert({
