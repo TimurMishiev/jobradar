@@ -1,5 +1,6 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import multipart from '@fastify/multipart';
 import { registerRoutes } from './routes';
 
 export async function buildServer() {
@@ -11,6 +12,13 @@ export async function buildServer() {
 
   await app.register(cors, {
     origin: process.env.WEB_URL ?? 'http://localhost:5173',
+  });
+
+  await app.register(multipart, {
+    limits: {
+      fileSize: 10 * 1024 * 1024, // 10 MB max
+      files: 1,
+    },
   });
 
   // Single-user auth hook: if API_KEY is set, require it on all non-health requests

@@ -34,6 +34,17 @@ export interface JobWithDetails extends NormalizedJob {
   userActions: UserJobAction[];
 }
 
+export interface Resume {
+  id: string;
+  label: string;
+  filename: string;
+  mimeType: string;
+  sizeBytes: number;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface JobFeedResponse {
   data: JobWithDetails[];
   pagination: {

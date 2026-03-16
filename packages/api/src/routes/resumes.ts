@@ -1,9 +1,16 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/prisma';
-import { getLocalUser } from '../lib/user';
+import { getLocalUser, getOrCreateLocalUser } from '../lib/user';
+import * as fs from 'fs/promises';
+import * as path from 'path';
+import { randomUUID } from 'crypto';
+import pdfParse from 'pdf-parse';
+
+const UPLOADS_DIR = path.join(__dirname, '../../uploads/resumes');
+const MAX_LABEL_LENGTH = 100;
 
 export async function resumeRoutes(app: FastifyInstance) {
-  // GET /api/resumes
+  // GET /api/resumes — list all resumes for the local user
   app.get('/', async () => {
     const user = await getLocalUser();
     if (!user) return [];
@@ -25,20 +32,135 @@ export async function resumeRoutes(app: FastifyInstance) {
     });
   });
 
-  // DELETE /api/resumes/:id
-  app.delete('/:id', async (request, reply) => {
-    const { id } = request.params as { id: string };
+  // POST /api/resumes — upload a PDF resume
+  app.post('/', async (request, reply) => {
+    const user = await getOrCreateLocalUser();
 
+    const data = await request.file();
+    if (!data) return reply.code(400).send({ error: 'No file uploaded' });
+
+    if (data.mimetype !== 'application/pdf') {
+      return reply.code(400).send({ error: 'Only PDF files are accepted' });
+    }
+
+    const buffer = await data.toBuffer();
+
+    if (buffer.length === 0) {
+      return reply.code(400).send({ error: 'Uploaded file is empty' });
+    }
+
+    // Extract text from PDF
+    let textContent: string | null = null;
+    try {
+      const parsed = await pdfParse(buffer);
+      textContent = parsed.text?.trim() || null;
+    } catch {
+      // If extraction fails, continue without text — scoring will skip it
+    }
+
+    // Save file to disk
+    const userDir = path.join(UPLOADS_DIR, user.id);
+    await fs.mkdir(userDir, { recursive: true });
+    const fileId = randomUUID();
+    const storagePath = path.join(userDir, `${fileId}.pdf`);
+    await fs.writeFile(storagePath, buffer);
+
+    const rawLabel = data.fields?.label;
+    const labelValue = rawLabel && typeof rawLabel === 'object' && 'value' in rawLabel
+      ? String(rawLabel.value)
+      : data.filename;
+    const label = labelValue.slice(0, MAX_LABEL_LENGTH);
+
+    // If this is the user's first resume, make it default
+    const existingCount = await prisma.resume.count({ where: { userId: user.id } });
+    const isDefault = existingCount === 0;
+
+    // If setting as default, unset all others first
+    if (isDefault) {
+      await prisma.resume.updateMany({ where: { userId: user.id }, data: { isDefault: false } });
+    }
+
+    const resume = await prisma.resume.create({
+      data: {
+        userId: user.id,
+        label,
+        filename: data.filename,
+        storagePath,
+        mimeType: data.mimetype,
+        sizeBytes: buffer.length,
+        textContent,
+        isDefault,
+      },
+      select: {
+        id: true,
+        label: true,
+        filename: true,
+        mimeType: true,
+        sizeBytes: true,
+        isDefault: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    return reply.code(201).send(resume);
+  });
+
+  // PATCH /api/resumes/:id/default — set a resume as the default
+  app.patch('/:id/default', async (request, reply) => {
+    const { id } = request.params as { id: string };
     const user = await getLocalUser();
     if (!user) return reply.code(404).send({ error: 'Resume not found' });
 
-    // Ownership check: ensure the resume belongs to the current user
     const existing = await prisma.resume.findUnique({ where: { id } });
     if (!existing || existing.userId !== user.id) {
       return reply.code(404).send({ error: 'Resume not found' });
     }
 
+    await prisma.resume.updateMany({ where: { userId: user.id }, data: { isDefault: false } });
+    const updated = await prisma.resume.update({
+      where: { id },
+      data: { isDefault: true },
+      select: {
+        id: true,
+        label: true,
+        filename: true,
+        mimeType: true,
+        sizeBytes: true,
+        isDefault: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    return updated;
+  });
+
+  // DELETE /api/resumes/:id
+  app.delete('/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const user = await getLocalUser();
+    if (!user) return reply.code(404).send({ error: 'Resume not found' });
+
+    const existing = await prisma.resume.findUnique({ where: { id } });
+    if (!existing || existing.userId !== user.id) {
+      return reply.code(404).send({ error: 'Resume not found' });
+    }
+
+    // Delete file from disk (best-effort)
+    fs.unlink(existing.storagePath).catch(() => {});
+
     await prisma.resume.delete({ where: { id } });
+
+    // If deleted resume was default, promote the next most recent one
+    if (existing.isDefault) {
+      const next = await prisma.resume.findFirst({
+        where: { userId: user.id },
+        orderBy: { createdAt: 'desc' },
+      });
+      if (next) await prisma.resume.update({ where: { id: next.id }, data: { isDefault: true } });
+    }
+
     return reply.code(204).send();
   });
 }
