@@ -29,6 +29,7 @@
   --accent-border:  #1e3a5f;
   --accent-btn-bg:  #1e3a5f;
   --accent-btn-hover: #1d4ed8;
+  --accent-btn-text: #93c5fd;
 
   --green:          #22c55e;
   --green-light:    #4ade80;
@@ -89,6 +90,7 @@
   --accent-border:  #bfdbfe;
   --accent-btn-bg:  #2563eb;
   --accent-btn-hover: #1d4ed8;
+  --accent-btn-text: #ffffff;
 
   --green:          #16a34a;
   --green-light:    #22c55e;
@@ -340,7 +342,7 @@ input, select, textarea { font: inherit; }
   font-size: 12px;
   font-weight: 500;
   background: var(--accent-btn-bg);
-  color: var(--accent-text);
+  color: var(--accent-btn-text);
   border: 1px solid var(--accent-border);
   border-radius: 6px;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
@@ -637,7 +639,7 @@ input, select, textarea { font: inherit; }
   margin-top: 28px;
   padding: 9px 18px;
   background: var(--accent-btn-bg);
-  color: var(--accent-text);
+  color: var(--accent-btn-text);
   border: 1px solid var(--accent-border);
   border-radius: 7px;
   font-size: 13px;
