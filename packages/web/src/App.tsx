@@ -6,12 +6,15 @@ import JobDetailPage from './pages/JobDetailPage';
 import SavedPage from './pages/SavedPage';
 import AppliedPage from './pages/AppliedPage';
 import ProfilePage from './pages/ProfilePage';
+import { useTheme } from './hooks/useTheme';
 
 export default function App() {
+  const { theme, toggle } = useTheme();
+
   return (
     <BrowserRouter>
       <div className="app">
-        <Nav />
+        <Nav theme={theme} onToggleTheme={toggle} />
         <main className="main">
           <Routes>
             <Route path="/" element={<Navigate to="/feed" replace />} />
