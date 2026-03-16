@@ -5,6 +5,7 @@ export default function Nav() {
   return (
     <nav className="nav">
       <NavLink to="/feed" className="nav-brand">
+        <span className="nav-brand-dot" />
         JobRadar
       </NavLink>
       <div className="nav-links">

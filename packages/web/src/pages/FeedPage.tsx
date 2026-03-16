@@ -175,6 +175,22 @@ export default function FeedPage() {
       {isLoading && <p className="state-message">Loading jobs...</p>}
       {isError && <p className="state-message state-message--error">Failed to load jobs.</p>}
 
+      {data && data.data.length > 0 && (() => {
+        const newCount = data.data.filter((j) => {
+          if (!j.postedAt) return false;
+          return Date.now() - new Date(j.postedAt).getTime() < 24 * 60 * 60 * 1000;
+        }).length;
+        return newCount > 0 ? (
+          <div className="feed-stats">
+            <span className="feed-stat-new">
+              <span className="feed-stat-dot" />
+              {newCount} new in the last 24h
+            </span>
+            <span>{data.pagination.total.toLocaleString()} total</span>
+          </div>
+        ) : null;
+      })()}
+
       {data && data.data.length === 0 && (
         <div className="empty-state">
           <p>No jobs match your filters.</p>

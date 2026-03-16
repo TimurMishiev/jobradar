@@ -100,7 +100,12 @@ export default function JobDetailPage() {
       <div className="job-description">
         <h3 className="job-description-label">Job Description</h3>
         <div className="job-description-body">
-          {job.descriptionNormalized ?? 'No description available.'}
+          {job.descriptionNormalized
+            ? job.descriptionNormalized
+                .split(/\n{2,}/)
+                .map((para, i) => <p key={i}>{para.trim()}</p>)
+            : <p>No description available.</p>
+          }
         </div>
         <a
           className="job-apply-link"
@@ -108,7 +113,7 @@ export default function JobDetailPage() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          Apply on {job.sourceName} →
+          Apply on {job.sourceName}
         </a>
       </div>
     </div>
