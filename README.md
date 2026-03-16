@@ -1,4 +1,4 @@
-# SignalHire
+# JobRadar
 
 AI-assisted job intelligence platform. Aggregates job postings from multiple ATS providers, normalizes and deduplicates them, and surfaces a personalized feed with save/ignore/applied tracking.
 
