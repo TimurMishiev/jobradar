@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { buildServer } from './server';
+import { startScheduler } from './lib/scheduler';
 
 const PORT = parseInt(process.env.PORT ?? '3000', 10);
 const HOST = process.env.HOST ?? '0.0.0.0';
@@ -13,6 +14,8 @@ async function main() {
     app.log.error(err);
     process.exit(1);
   }
+
+  startScheduler();
 }
 
 main();

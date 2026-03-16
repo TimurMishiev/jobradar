@@ -25,9 +25,11 @@ const SENIORITY_OPTIONS = [
 const COMPANIES = ['Anthropic', 'OpenAI', 'Anduril', 'Palantir', 'Shield AI'];
 
 const POSTED_WITHIN_OPTIONS = [
+  { value: '1', label: 'Last 24 hours' },
+  { value: '3', label: 'Last 3 days' },
+  { value: '7', label: 'Last 7 days' },
+  { value: '14', label: 'Last 2 weeks' },
   { value: '30', label: 'Last 30 days' },
-  { value: '60', label: 'Last 60 days' },
-  { value: '90', label: 'Last 90 days' },
   { value: 'all', label: 'All time' },
 ];
 
@@ -37,7 +39,7 @@ export default function FeedPage() {
   const company = searchParams.get('company') ?? '';
   const remoteType = searchParams.get('remoteType') ?? '';
   const seniority = searchParams.get('seniority') ?? '';
-  const postedWithin = searchParams.get('postedWithin') ?? '90';
+  const postedWithin = searchParams.get('postedWithin') ?? '7';
   const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10) || 1);
 
   const setParam = (key: string, value: string) => {
@@ -57,9 +59,9 @@ export default function FeedPage() {
     setSearchParams(next);
   };
 
-  const hasFilters = company || remoteType || seniority || postedWithin !== '90';
+  const hasFilters = company || remoteType || seniority || postedWithin !== '7';
 
-  const clearFilters = () => setSearchParams(new URLSearchParams({ postedWithin: '90' }));
+  const clearFilters = () => setSearchParams(new URLSearchParams({ postedWithin: '7' }));
 
   const params = new URLSearchParams({
     page: String(page),

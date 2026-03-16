@@ -35,15 +35,15 @@ export async function jobRoutes(app: FastifyInstance) {
     const user = await getLocalUser();
     const userId = user?.id ?? '__no_user__';
 
-    // Default to 90 days; pass 'all' to disable the cutoff
-    const VALID_DAYS = [30, 60, 90];
+    // Default to 7 days; pass 'all' to disable the cutoff
+    const VALID_DAYS = [1, 3, 7, 14, 30];
     const rawDays = query.postedWithin;
-    const parsedDays = rawDays === 'all' ? null : parseInt(rawDays ?? '90', 10);
-    const postedWithinDays = parsedDays !== null && VALID_DAYS.includes(parsedDays) ? parsedDays : 90;
+    const parsedDays = rawDays === 'all' ? null : parseInt(rawDays ?? '7', 10);
+    const postedWithinDays = parsedDays !== null && VALID_DAYS.includes(parsedDays) ? parsedDays : 7;
     const postedAfter =
       rawDays === 'all'
         ? undefined
-        : new Date(Date.now() - postedWithinDays * 24 * 60 * 60 * 1000);
+        : new Date(Date.now() - postedWithinDays * 24 * 60 * 60 * 1_000);
 
     const where: Prisma.JobWhereInput = {
       isActive: true,
