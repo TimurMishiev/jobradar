@@ -1,0 +1,113 @@
+import { prisma } from '../lib/prisma';
+import { TARGET_COMPANIES, CompanyConfig, AtsType } from '../companies';
+import { GreenhouseConnector } from '../connectors/greenhouse';
+import { LeverConnector } from '../connectors/lever';
+import { AshbyConnector } from '../connectors/ashby';
+import { RawGreenhouseJob, RawLeverJob, RawAshbyJob } from '../connectors/types';
+import {
+  normalizeGreenhouseJob,
+  normalizeLeverJob,
+  normalizeAshbyJob,
+  NormalizedJobInput,
+} from './normalization';
+
+export interface IngestionCompanyResult {
+  company: string;
+  fetched: number;
+  created: number;
+  error: string | null;
+}
+
+export interface IngestionSummary {
+  startedAt: string;
+  finishedAt: string;
+  results: IngestionCompanyResult[];
+  totalFetched: number;
+  totalCreated: number;
+}
+
+// ─── Fetch raw jobs from the right connector ──────────────────────────────────
+
+async function fetchAndNormalize(company: CompanyConfig): Promise<NormalizedJobInput[]> {
+  switch (company.ats) {
+    case 'greenhouse': {
+      const connector = new GreenhouseConnector(company);
+      const jobs = await connector.fetch() as RawGreenhouseJob[];
+      return jobs.map((j) => normalizeGreenhouseJob(j, company));
+    }
+    case 'lever': {
+      const connector = new LeverConnector(company);
+      const jobs = await connector.fetch() as RawLeverJob[];
+      return jobs.map((j) => normalizeLeverJob(j, company));
+    }
+    case 'ashby': {
+      const connector = new AshbyConnector(company);
+      const jobs = await connector.fetch() as RawAshbyJob[];
+      return jobs.map((j) => normalizeAshbyJob(j, company));
+    }
+    default: {
+      const _exhaustive: never = company.ats;
+      throw new Error(`Unknown ATS type: ${_exhaustive}`);
+    }
+  }
+}
+
+// ─── Ingest a single company ──────────────────────────────────────────────────
+
+async function ingestCompany(company: CompanyConfig): Promise<IngestionCompanyResult> {
+  try {
+    const normalizedJobs = await fetchAndNormalize(company);
+
+    // createMany with skipDuplicates relies on the @@unique([sourceType, company, externalJobId])
+    // constraint in the schema — any job already in the DB is silently skipped.
+    const result = await prisma.job.createMany({
+      data: normalizedJobs,
+      skipDuplicates: true,
+    });
+
+    return {
+      company: company.name,
+      fetched: normalizedJobs.length,
+      created: result.count,
+      error: null,
+    };
+  } catch (err) {
+    return {
+      company: company.name,
+      fetched: 0,
+      created: 0,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
+// ─── Main ingestion runner ────────────────────────────────────────────────────
+
+export async function runIngestion(slugFilter?: string[]): Promise<IngestionSummary> {
+  const startedAt = new Date().toISOString();
+
+  const companies = slugFilter?.length
+    ? TARGET_COMPANIES.filter((c) => slugFilter.includes(c.slug))
+    : TARGET_COMPANIES;
+
+  // Run companies sequentially — be a polite API consumer
+  const results: IngestionCompanyResult[] = [];
+  for (const company of companies) {
+    process.stdout.write(
+      `[ingestion] fetching ${company.name} (${company.ats}:${company.boardToken})\n`,
+    );
+    const result = await ingestCompany(company);
+    process.stdout.write(
+      `[ingestion] ${company.name}: fetched=${result.fetched} created=${result.created}${result.error ? ` error=${result.error}` : ''}\n`,
+    );
+    results.push(result);
+  }
+
+  return {
+    startedAt,
+    finishedAt: new Date().toISOString(),
+    results,
+    totalFetched: results.reduce((sum, r) => sum + r.fetched, 0),
+    totalCreated: results.reduce((sum, r) => sum + r.created, 0),
+  };
+}

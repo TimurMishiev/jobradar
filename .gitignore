@@ -1,0 +1,22 @@
+node_modules/
+dist/
+.env
+*.local
+uploads/
+
+# Claude Code memory (not project source)
+.claude/
+
+# Prisma
+packages/api/prisma/dev.db
+packages/api/prisma/dev.db-journal
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo

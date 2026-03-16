@@ -1,0 +1,138 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── User ────────────────────────────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profile    UserProfile?
+  resumes    Resume[]
+  jobActions UserJobAction[]
+}
+
+model UserProfile {
+  id                 String           @id @default(cuid())
+  userId             String           @unique
+  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetTitles       String[]
+  targetSkills       String[]
+  preferredCompanies String[]
+  targetLocations    String[]
+  remotePreference   RemotePreference @default(ANY)
+  seniorityPref      String[]
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+}
+
+enum RemotePreference {
+  REMOTE_ONLY
+  HYBRID
+  ONSITE
+  ANY
+}
+
+// ─── Resume ───────────────────────────────────────────────────────────────────
+
+model Resume {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label       String
+  filename    String
+  storagePath String
+  mimeType    String
+  sizeBytes   Int
+  textContent String?  // extracted plain text, used for scoring
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  scores JobScore[]
+}
+
+// ─── Job ──────────────────────────────────────────────────────────────────────
+
+model Job {
+  id                    String    @id @default(cuid())
+  sourceType            String    // greenhouse | lever | custom
+  sourceName            String    // human-readable source label
+  externalJobId         String?   // stable ID from the source system
+  company               String
+  title                 String
+  url                   String
+  location              String?
+  remoteType            String?   // remote | hybrid | onsite | unknown
+  descriptionRaw        String?
+  descriptionNormalized String?
+  postedAt              DateTime?
+  fetchedAt             DateTime  @default(now())
+  tags                  String[]
+  seniorityGuess        String?   // intern | junior | mid | senior | staff | principal | unknown
+  employmentType        String?   // full_time | part_time | contract | internship | unknown
+  isActive              Boolean   @default(true)
+  rawPayload            Json?     // original source payload stored for debugging
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  scores      JobScore[]
+  userActions UserJobAction[]
+
+  // Dedup: for structured sources (Greenhouse/Lever), (sourceType, company, externalJobId) is unique.
+  // URL-based dedup is handled in ingestion code for sources without stable IDs.
+  @@unique([sourceType, company, externalJobId])
+  @@index([company])
+  @@index([isActive])
+  @@index([postedAt])
+  @@index([createdAt])
+}
+
+// ─── Scoring ──────────────────────────────────────────────────────────────────
+
+model JobScore {
+  id          String   @id @default(cuid())
+  jobId       String
+  job         Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  resumeId    String?
+  resume      Resume?  @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+  score       Int      // 0–100
+  fitCategory String?  // high | medium | low
+  explanation String?
+  skillsMatch Json?    // { matched: string[], missing: string[], bonus: string[] }
+  modelUsed   String?
+  createdAt   DateTime @default(now())
+
+  @@unique([jobId, resumeId])
+}
+
+// ─── User Job Actions ─────────────────────────────────────────────────────────
+
+model UserJobAction {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId     String
+  job       Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  action    JobAction
+  notes     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([userId, jobId])
+  @@index([userId, action])
+}
+
+enum JobAction {
+  SAVED
+  IGNORED
+  APPLIED
+}
