@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { getLocalUser, getOrCreateLocalUser } from '../lib/user';
+import { enrichWorkdayJob } from '../services/workdayEnrich';
 
 const VALID_ACTIONS = ['SAVED', 'IGNORED', 'APPLIED'] as const;
 type JobAction = (typeof VALID_ACTIONS)[number];
@@ -116,6 +117,19 @@ export async function jobRoutes(app: FastifyInstance) {
     });
 
     if (!job) return reply.code(404).send({ error: 'Job not found' });
+
+    // Lazily fetch and cache Workday job descriptions on first open
+    if (job.sourceType === 'workday' && !job.descriptionNormalized) {
+      await enrichWorkdayJob(id);
+      return prisma.job.findUnique({
+        where: { id },
+        include: {
+          scores: { orderBy: { createdAt: 'desc' } },
+          userActions: { where: { userId } },
+        },
+      });
+    }
+
     return job;
   });
 
