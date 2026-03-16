@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { apiFetch } from '../lib/api';
 import type { JobFeedResponse, JobScore } from '../lib/types';
 import JobCard from '../components/JobCard';
+import Select from '../components/Select';
 
 const REMOTE_OPTIONS = [
   { value: '', label: 'All locations' },
@@ -130,46 +131,29 @@ export default function FeedPage() {
       </div>
 
       <div className="filters">
-        <select
-          className="filter-select"
+        <Select
           value={company}
-          onChange={(e) => setParam('company', e.target.value)}
-        >
-          <option value="">All companies</option>
-          {companies.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
+          onChange={(v) => setParam('company', v)}
+          options={[{ value: '', label: 'All companies' }, ...companies.map((c) => ({ value: c, label: c }))]}
+        />
 
-        <select
-          className="filter-select"
+        <Select
           value={remoteType}
-          onChange={(e) => setParam('remoteType', e.target.value)}
-        >
-          {REMOTE_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </select>
+          onChange={(v) => setParam('remoteType', v)}
+          options={REMOTE_OPTIONS}
+        />
 
-        <select
-          className="filter-select"
+        <Select
           value={seniority}
-          onChange={(e) => setParam('seniority', e.target.value)}
-        >
-          {SENIORITY_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </select>
+          onChange={(v) => setParam('seniority', v)}
+          options={SENIORITY_OPTIONS}
+        />
 
-        <select
-          className="filter-select"
+        <Select
           value={postedWithin}
-          onChange={(e) => setParam('postedWithin', e.target.value)}
-        >
-          {POSTED_WITHIN_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </select>
+          onChange={(v) => setParam('postedWithin', v)}
+          options={POSTED_WITHIN_OPTIONS}
+        />
 
         {hasFilters && (
           <button className="filter-clear" onClick={clearFilters}>

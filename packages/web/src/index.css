@@ -306,25 +306,6 @@ input, select, textarea { font: inherit; }
   align-items: center;
 }
 
-.filter-select {
-  background: var(--bg-card);
-  border: 1px solid var(--border-muted);
-  border-radius: 6px;
-  color: var(--text-secondary);
-  padding: 6px 10px;
-  font-size: 12px;
-  cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
-  appearance: none;
-  padding-right: 26px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23737373'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 9px center;
-}
-
-.filter-select:hover { border-color: var(--border-hover); }
-.filter-select:focus { border-color: var(--accent); outline: none; }
-
 .filter-clear {
   font-size: 12px;
   color: var(--text-faint);
@@ -334,6 +315,99 @@ input, select, textarea { font: inherit; }
 }
 
 .filter-clear:hover { color: var(--text-secondary); background: var(--bg-elevated); }
+
+/* ─── Custom Select ───────────────────────────────────────────────────────────── */
+
+.custom-select {
+  position: relative;
+  display: inline-flex;
+}
+
+.custom-select-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-muted);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.custom-select-trigger:hover,
+.custom-select-trigger.open {
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+}
+
+.custom-select-trigger.open {
+  background: var(--bg-elevated);
+}
+
+.custom-select-chevron {
+  color: var(--text-disabled);
+  flex-shrink: 0;
+  transition: transform 0.15s;
+}
+
+.custom-select-trigger.open .custom-select-chevron {
+  transform: rotate(180deg);
+}
+
+.custom-select-menu {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  min-width: 100%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-muted);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 200;
+  list-style: none;
+  padding: 4px;
+  overflow: hidden;
+  animation: select-appear 0.1s ease;
+}
+
+@keyframes select-appear {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.custom-select-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+  white-space: nowrap;
+}
+
+.custom-select-option:hover {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.custom-select-option.selected {
+  color: var(--accent-text);
+  background: var(--accent-bg);
+}
+
+.custom-select-check {
+  color: var(--accent);
+  flex-shrink: 0;
+}
 
 /* ─── Score button ────────────────────────────────────────────────────────────── */
 
@@ -624,9 +698,9 @@ input, select, textarea { font: inherit; }
 }
 
 .job-description-body {
-  font-size: 13px;
-  color: var(--text-muted);
-  line-height: 1.8;
+  font-size: 15px;
+  color: var(--text-body);
+  line-height: 1.75;
 }
 
 .job-description-body p { margin-bottom: 12px; }
