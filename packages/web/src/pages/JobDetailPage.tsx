@@ -60,29 +60,28 @@ export default function JobDetailPage() {
         <ScoreBadge score={score} isScoring={isScoring} />
       </div>
 
-      {score?.explanation && (
+      {score && (score.summary || score.matchReasons.length > 0) && (
         <div className="score-explanation">
-          <p className="score-explanation-label">Why this matches</p>
-          <p>{score.explanation}</p>
-          {score.skillsMatch && (
-            <div className="skills-match">
-              {score.skillsMatch.matched.length > 0 && (
-                <div>
-                  <span className="skills-label skills-label--matched">Matched:</span>
-                  {score.skillsMatch.matched.map((s) => (
-                    <span key={s} className="skill-tag skill-tag--matched">{s}</span>
-                  ))}
-                </div>
-              )}
-              {score.skillsMatch.missing.length > 0 && (
-                <div>
-                  <span className="skills-label skills-label--missing">Missing:</span>
-                  {score.skillsMatch.missing.map((s) => (
-                    <span key={s} className="skill-tag skill-tag--missing">{s}</span>
-                  ))}
-                </div>
-              )}
-            </div>
+          {score.summary && (
+            <p className="score-summary">{score.summary}</p>
+          )}
+          {score.matchReasons.length > 0 && (
+            <ul className="match-reasons">
+              {score.matchReasons.map((r, i) => (
+                <li key={i} className="match-reason match-reason--positive">
+                  <span className="match-reason-icon">✓</span>{r}
+                </li>
+              ))}
+            </ul>
+          )}
+          {score.missingSignals.length > 0 && (
+            <ul className="match-reasons">
+              {score.missingSignals.map((r, i) => (
+                <li key={i} className="match-reason match-reason--gap">
+                  <span className="match-reason-icon">✗</span>{r}
+                </li>
+              ))}
+            </ul>
           )}
         </div>
       )}

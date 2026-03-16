@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/prisma';
 import { getOrCreateLocalUser } from '../lib/user';
 import type { RemotePreference } from '@jobradar/shared';
+import { scoreUnscoredJobs } from '../services/scoring';
 
 const VALID_REMOTE_PREFS: RemotePreference[] = ['REMOTE_ONLY', 'HYBRID', 'ONSITE', 'ANY'];
 
@@ -60,6 +61,9 @@ export async function profileRoutes(app: FastifyInstance) {
         ...(body.seniorityPref !== undefined && { seniorityPref: toStringArray(body.seniorityPref) }),
       },
     });
+
+    // Kick off background scoring for any unscored jobs now that profile has changed
+    setImmediate(() => scoreUnscoredJobs().catch(() => {}));
 
     return reply.code(200).send(profile);
   });

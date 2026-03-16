@@ -1,19 +1,17 @@
 import OpenAI from 'openai';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { getLocalUser } from '../lib/user';
 
 const MODEL = 'gpt-4o-mini';
 const OPENAI_TIMEOUT_MS = 30_000;
+const PREFERRED_COMPANY_BOOST = 5;
 
 interface ScoringOutput {
   score: number;
-  fitCategory: 'high' | 'medium' | 'low';
-  explanation: string;
-  skillsMatch: {
-    matched: string[];
-    missing: string[];
-    bonus: string[];
-  };
+  matchReasons: string[];
+  missingSignals: string[];
+  summary: string;
 }
 
 function getClient(): OpenAI {
@@ -29,12 +27,14 @@ function buildPrompt(params: {
   targetTitles: string[];
   targetSkills: string[];
   resumeText: string | null;
+  isPreferredCompany: boolean;
 }): string {
-  const { jobTitle, company, description, targetTitles, targetSkills, resumeText } = params;
+  const { jobTitle, company, description, targetTitles, targetSkills, resumeText, isPreferredCompany } = params;
 
   const profileSection = [
     targetTitles.length > 0 ? `Target titles: ${targetTitles.join(', ')}` : null,
     targetSkills.length > 0 ? `Target skills: ${targetSkills.join(', ')}` : null,
+    isPreferredCompany ? `Note: ${company} is a preferred company for this candidate.` : null,
     resumeText ? `\nResume:\n${resumeText.slice(0, 3000)}` : null,
   ]
     .filter(Boolean)
@@ -54,19 +54,16 @@ ${description.slice(0, 4000)}
 Return ONLY valid JSON with this exact shape:
 {
   "score": <integer 0-100>,
-  "fitCategory": <"high" | "medium" | "low">,
-  "explanation": <1-2 sentence summary of the match>,
-  "skillsMatch": {
-    "matched": [<skills present in both candidate and job>],
-    "missing": [<skills required by job that candidate lacks>],
-    "bonus": [<candidate skills not required but relevant>]
-  }
+  "matchReasons": [<2-4 concise bullet strings explaining why this is a good fit>],
+  "missingSignals": [<0-3 concise bullet strings for skills/experience the job requires that the candidate lacks>],
+  "summary": <1-2 sentence plain-English summary of the overall fit>
 }
 
 Guidelines:
-- score 75-100 = high fit, 45-74 = medium fit, 0-44 = low fit
-- fitCategory must match the score range
-- Keep explanation concise and specific`;
+- score 75-100 = strong fit, 45-74 = moderate fit, 0-44 = weak fit
+- matchReasons should be specific (mention actual skills/experience overlap), not generic
+- missingSignals should only list genuine gaps, not minor nice-to-haves — return [] if none
+- summary must be concrete and actionable, not vague`;
 }
 
 export async function scoreJob(jobId: string): Promise<{
@@ -75,8 +72,9 @@ export async function scoreJob(jobId: string): Promise<{
   resumeId: string | null;
   score: number;
   fitCategory: string | null;
-  explanation: string | null;
-  skillsMatch: unknown;
+  matchReasons: string[];
+  missingSignals: string[];
+  summary: string | null;
   modelUsed: string | null;
   createdAt: Date;
 }> {
@@ -93,6 +91,10 @@ export async function scoreJob(jobId: string): Promise<{
     prisma.resume.findFirst({ where: { userId: user.id, isDefault: true } }),
   ]);
 
+  const isPreferredCompany = profile?.preferredCompanies.some(
+    (c) => c.toLowerCase() === job.company.toLowerCase(),
+  ) ?? false;
+
   const prompt = buildPrompt({
     jobTitle: job.title,
     company: job.company,
@@ -100,6 +102,7 @@ export async function scoreJob(jobId: string): Promise<{
     targetTitles: profile?.targetTitles ?? [],
     targetSkills: profile?.targetSkills ?? [],
     resumeText: resume?.textContent ?? null,
+    isPreferredCompany,
   });
 
   const completion = await client.chat.completions.create(
@@ -121,22 +124,33 @@ export async function scoreJob(jobId: string): Promise<{
     throw new Error(`OpenAI returned invalid JSON: ${raw.slice(0, 200)}`);
   }
 
-  // Clamp score to 0-100; guard against NaN in case the model returns a non-numeric value
+  // Clamp score; apply preferred company boost
   const rawScore = Number(output.score);
-  const score = Number.isFinite(rawScore) ? Math.max(0, Math.min(100, Math.round(rawScore))) : 0;
-  const fitCategory =
-    ['high', 'medium', 'low'].includes(output.fitCategory) ? output.fitCategory : null;
+  let score = Number.isFinite(rawScore) ? Math.max(0, Math.min(100, Math.round(rawScore))) : 0;
+  if (isPreferredCompany) score = Math.min(100, score + PREFERRED_COMPANY_BOOST);
+
+  const fitCategory = score >= 75 ? 'high' : score >= 45 ? 'medium' : 'low';
+
+  const matchReasons = Array.isArray(output.matchReasons)
+    ? output.matchReasons.filter((r): r is string => typeof r === 'string').slice(0, 6)
+    : [];
+  const missingSignals = Array.isArray(output.missingSignals)
+    ? output.missingSignals.filter((r): r is string => typeof r === 'string').slice(0, 4)
+    : [];
+  const summary = typeof output.summary === 'string' ? output.summary : null;
 
   const scoreData = {
     score,
     fitCategory,
-    explanation: output.explanation ?? null,
-    skillsMatch: output.skillsMatch ?? null,
+    explanation: summary,           // keep legacy field in sync
+    skillsMatch: Prisma.JsonNull,   // legacy field no longer populated
+    matchReasons,
+    missingSignals,
+    summary,
     modelUsed: MODEL,
   };
 
-  // NULL != NULL in SQL unique constraints, so upsert via the composite key only
-  // works when resumeId is non-null. Handle both cases explicitly.
+  // NULL != NULL in SQL unique constraints — handle resumeId null case explicitly
   let result;
   if (resume) {
     result = await prisma.jobScore.upsert({
@@ -154,4 +168,51 @@ export async function scoreJob(jobId: string): Promise<{
   }
 
   return result;
+}
+
+// Score all jobs that have a description but no score yet.
+// Runs in the background — callers should not await this.
+export async function scoreUnscoredJobs(): Promise<void> {
+  if (!process.env.OPENAI_API_KEY) return;
+
+  const jobs = await prisma.job.findMany({
+    where: {
+      isActive: true,
+      descriptionNormalized: { not: null },
+      scores: { none: {} },
+    },
+    select: { id: true },
+    orderBy: { postedAt: 'desc' },
+    take: 50, // cap per run to avoid hammering the API
+  });
+
+  for (const job of jobs) {
+    try {
+      await scoreJob(job.id);
+    } catch {
+      // Individual failures are non-fatal — continue scoring the rest
+    }
+  }
+}
+
+// Score a specific set of newly ingested job IDs that have descriptions.
+export async function scoreNewJobs(jobIds: string[]): Promise<void> {
+  if (!process.env.OPENAI_API_KEY || jobIds.length === 0) return;
+
+  const jobs = await prisma.job.findMany({
+    where: {
+      id: { in: jobIds },
+      descriptionNormalized: { not: null },
+      scores: { none: {} },
+    },
+    select: { id: true },
+  });
+
+  for (const job of jobs) {
+    try {
+      await scoreJob(job.id);
+    } catch {
+      // Non-fatal
+    }
+  }
 }

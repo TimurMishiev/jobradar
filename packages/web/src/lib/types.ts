@@ -18,12 +18,9 @@ export interface JobScore {
   resumeId: string | null;
   score: number;
   fitCategory: 'high' | 'medium' | 'low' | null;
-  explanation: string | null;
-  skillsMatch: {
-    matched: string[];
-    missing: string[];
-    bonus: string[];
-  } | null;
+  summary: string | null;
+  matchReasons: string[];
+  missingSignals: string[];
   modelUsed: string | null;
   createdAt: string;
 }

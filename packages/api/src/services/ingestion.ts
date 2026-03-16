@@ -1,5 +1,6 @@
 import { prisma } from '../lib/prisma';
 import { TARGET_COMPANIES, CompanyConfig, AtsType } from '../companies';
+import { scoreNewJobs } from './scoring';
 import { GreenhouseConnector } from '../connectors/greenhouse';
 import { LeverConnector } from '../connectors/lever';
 import { AshbyConnector } from '../connectors/ashby';
@@ -79,17 +80,23 @@ async function ingestCompany(company: CompanyConfig): Promise<IngestionCompanyRe
   try {
     const normalizedJobs = await fetchAndNormalize(company);
 
-    // createMany with skipDuplicates relies on the @@unique([sourceType, company, externalJobId])
-    // constraint in the schema — any job already in the DB is silently skipped.
-    const result = await prisma.job.createMany({
+    // createManyAndReturn returns the created records (skipping duplicates via @@unique constraint).
+    // We use the returned IDs to trigger background scoring for new jobs with descriptions.
+    const created = await prisma.job.createManyAndReturn({
       data: normalizedJobs,
       skipDuplicates: true,
+      select: { id: true },
     });
+
+    if (created.length > 0) {
+      const newIds = created.map((j) => j.id);
+      setImmediate(() => scoreNewJobs(newIds).catch(() => {}));
+    }
 
     return {
       company: company.name,
       fetched: normalizedJobs.length,
-      created: result.count,
+      created: created.length,
       error: null,
     };
   } catch (err) {

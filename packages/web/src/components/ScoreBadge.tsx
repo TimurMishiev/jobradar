@@ -23,7 +23,7 @@ export default function ScoreBadge({ score, isScoring }: Props) {
         : 'score-badge--low';
 
   return (
-    <span className={`score-badge ${cls}`} title={score.explanation ?? undefined}>
+    <span className={`score-badge ${cls}`} title={score.summary ?? undefined}>
       {score.score}
     </span>
   );

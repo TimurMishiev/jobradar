@@ -735,13 +735,41 @@ input, select, textarea { font: inherit; }
   margin-bottom: 8px;
 }
 
-.skills-match { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
-.skills-label { font-size: 11px; font-weight: 500; margin-right: 6px; }
-.skills-label--matched { color: var(--green); }
-.skills-label--missing { color: var(--red); }
-.skill-tag { display: inline-block; font-size: 11px; padding: 2px 7px; border-radius: 4px; margin-right: 4px; }
-.skill-tag--matched { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
-.skill-tag--missing { background: var(--red-bg);   color: var(--red);   border: 1px solid var(--red-border); }
+.score-summary {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.match-reasons {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.match-reason {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.match-reason-icon {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  margin-top: 1px;
+}
+
+.match-reason--positive { color: var(--text-primary); }
+.match-reason--positive .match-reason-icon { color: var(--green); }
+.match-reason--gap { color: var(--text-secondary); }
+.match-reason--gap .match-reason-icon { color: var(--text-disabled); }
 
 /* ─── Job description ─────────────────────────────────────────────────────────── */
 

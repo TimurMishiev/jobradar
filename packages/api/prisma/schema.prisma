@@ -99,17 +99,20 @@ model Job {
 // ─── Scoring ──────────────────────────────────────────────────────────────────
 
 model JobScore {
-  id          String   @id @default(cuid())
-  jobId       String
-  job         Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  resumeId    String?
-  resume      Resume?  @relation(fields: [resumeId], references: [id], onDelete: SetNull)
-  score       Int      // 0–100
-  fitCategory String?  // high | medium | low
-  explanation String?
-  skillsMatch Json?    // { matched: string[], missing: string[], bonus: string[] }
-  modelUsed   String?
-  createdAt   DateTime @default(now())
+  id             String   @id @default(cuid())
+  jobId          String
+  job            Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  resumeId       String?
+  resume         Resume?  @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+  score          Int      // 0–100
+  fitCategory    String?  // high | medium | low
+  explanation    String?
+  skillsMatch    Json?    // legacy: { matched: string[], missing: string[], bonus: string[] }
+  matchReasons   String[] // v1.1: why this job is a good fit
+  missingSignals String[] // v1.1: what the candidate lacks
+  summary        String?  // v1.1: 1-2 sentence human-readable summary
+  modelUsed      String?
+  createdAt      DateTime @default(now())
 
   @@unique([jobId, resumeId])
 }
