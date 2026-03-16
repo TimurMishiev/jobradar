@@ -23,7 +23,6 @@ const SENIORITY_OPTIONS = [
   { value: 'principal', label: 'Principal' },
 ];
 
-
 const POSTED_WITHIN_OPTIONS = [
   { value: '1', label: 'Last 24 hours' },
   { value: '3', label: 'Last 3 days' },
@@ -33,8 +32,18 @@ const POSTED_WITHIN_OPTIONS = [
   { value: 'all', label: 'All time' },
 ];
 
+interface ParsedFilters {
+  title?: string;
+  location?: string;
+  company?: string;
+  seniority?: string;
+  remoteType?: string;
+}
+
 export default function FeedPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const [nlQuery, setNlQuery] = useState(searchParams.get('search') ?? '');
+  const [isParsing, setIsParsing] = useState(false);
 
   const { data: companiesData } = useQuery({
     queryKey: ['companies'],
@@ -47,6 +56,8 @@ export default function FeedPage() {
   const remoteType = searchParams.get('remoteType') ?? '';
   const seniority = searchParams.get('seniority') ?? '';
   const postedWithin = searchParams.get('postedWithin') ?? '7';
+  const location = searchParams.get('location') ?? '';
+  const title = searchParams.get('title') ?? '';
   const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10) || 1);
 
   const setParam = (key: string, value: string) => {
@@ -56,7 +67,7 @@ export default function FeedPage() {
     } else {
       next.delete(key);
     }
-    next.delete('page'); // reset to page 1 on filter change
+    next.delete('page');
     setSearchParams(next);
   };
 
@@ -66,9 +77,43 @@ export default function FeedPage() {
     setSearchParams(next);
   };
 
-  const hasFilters = company || remoteType || seniority || postedWithin !== '7';
+  const hasFilters = company || remoteType || seniority || postedWithin !== '7' || location || title;
 
-  const clearFilters = () => setSearchParams(new URLSearchParams({ postedWithin: '7' }));
+  const clearFilters = () => {
+    setNlQuery('');
+    setSearchParams(new URLSearchParams({ postedWithin: '7' }));
+  };
+
+  const handleNlSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = nlQuery.trim();
+    if (!q) return;
+
+    setIsParsing(true);
+    try {
+      const parsed = await apiFetch<ParsedFilters>('/api/search/parse', {
+        method: 'POST',
+        body: JSON.stringify({ query: q }),
+      });
+
+      const next = new URLSearchParams({ postedWithin: '7', search: q });
+      if (parsed.title) next.set('title', parsed.title);
+      if (parsed.location) next.set('location', parsed.location);
+      if (parsed.company) next.set('company', parsed.company);
+      if (parsed.seniority) next.set('seniority', parsed.seniority);
+      if (parsed.remoteType) next.set('remoteType', parsed.remoteType);
+      setSearchParams(next);
+    } catch {
+      // Fallback: treat the query as a title keyword search
+      const next = new URLSearchParams(searchParams);
+      next.set('title', q);
+      next.set('search', q);
+      next.delete('page');
+      setSearchParams(next);
+    } finally {
+      setIsParsing(false);
+    }
+  };
 
   const params = new URLSearchParams({
     page: String(page),
@@ -78,10 +123,12 @@ export default function FeedPage() {
     ...(company && { company }),
     ...(remoteType && { remoteType }),
     ...(seniority && { seniority }),
+    ...(location && { location }),
+    ...(title && { title }),
   });
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['jobs', { company, remoteType, seniority, postedWithin, page }],
+    queryKey: ['jobs', { company, remoteType, seniority, postedWithin, page, location, title }],
     queryFn: () => apiFetch<JobFeedResponse>(`/api/jobs?${params}`),
   });
 
@@ -130,11 +177,25 @@ export default function FeedPage() {
         </div>
       </div>
 
+      <form className="nl-search" onSubmit={handleNlSearch}>
+        <input
+          className="nl-search-input"
+          type="text"
+          placeholder='e.g. "Frontend roles in defense tech, remote"'
+          value={nlQuery}
+          onChange={(e) => setNlQuery(e.target.value)}
+        />
+        <button className="nl-search-btn" type="submit" disabled={isParsing || !nlQuery.trim()}>
+          {isParsing ? 'Searching...' : 'Search'}
+        </button>
+      </form>
+
       <div className="filters">
         <Select
           value={company}
           onChange={(v) => setParam('company', v)}
-          options={[{ value: '', label: 'All companies' }, ...companies.map((c) => ({ value: c, label: c }))]}
+          options={[{ value: '', label: 'All companies' }, ...companies.map((c) => ({ value: c, label: c }))]
+          }
         />
 
         <Select
@@ -153,6 +214,22 @@ export default function FeedPage() {
           value={postedWithin}
           onChange={(v) => setParam('postedWithin', v)}
           options={POSTED_WITHIN_OPTIONS}
+        />
+
+        <input
+          className="filter-text-input"
+          type="text"
+          placeholder="Role / title"
+          value={title}
+          onChange={(e) => setParam('title', e.target.value)}
+        />
+
+        <input
+          className="filter-text-input"
+          type="text"
+          placeholder="Location (e.g. US, New York)"
+          value={location}
+          onChange={(e) => setParam('location', e.target.value)}
         />
 
         {hasFilters && (

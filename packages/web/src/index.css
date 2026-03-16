@@ -296,6 +296,47 @@ input, select, textarea { font: inherit; }
   box-shadow: 0 0 6px var(--dot-new-shadow);
 }
 
+/* ─── NL Search Bar ───────────────────────────────────────────────────────────── */
+
+.nl-search {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.nl-search-input {
+  flex: 1;
+  background: var(--bg-input);
+  border: 1px solid var(--border-muted);
+  border-radius: 8px;
+  padding: 9px 14px;
+  font-size: 14px;
+  color: var(--text-primary);
+  transition: border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+}
+
+.nl-search-input::placeholder { color: var(--text-disabled); }
+
+.nl-search-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+.nl-search-btn {
+  background: var(--accent);
+  color: #fff;
+  border-radius: 8px;
+  padding: 9px 18px;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.nl-search-btn:hover:not(:disabled) { background: var(--accent-hover); }
+.nl-search-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
 /* ─── Filters ─────────────────────────────────────────────────────────────────── */
 
 .filters {
@@ -305,6 +346,21 @@ input, select, textarea { font: inherit; }
   margin-bottom: 20px;
   align-items: center;
 }
+
+.filter-text-input {
+  background: var(--bg-input);
+  border: 1px solid var(--border-muted);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 13px;
+  color: var(--text-primary);
+  width: 160px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.filter-text-input::placeholder { color: var(--text-disabled); }
+.filter-text-input:focus { border-color: var(--border-hover); }
 
 .filter-clear {
   font-size: 12px;

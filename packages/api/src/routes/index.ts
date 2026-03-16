@@ -4,6 +4,7 @@ import { resumeRoutes } from './resumes';
 import { jobRoutes } from './jobs';
 import { ingestRoutes } from './ingest';
 import { scoringRoutes } from './scoring';
+import { searchRoutes } from './search';
 
 export async function registerRoutes(app: FastifyInstance) {
   await app.register(profileRoutes, { prefix: '/api/profile' });
@@ -11,4 +12,5 @@ export async function registerRoutes(app: FastifyInstance) {
   await app.register(jobRoutes, { prefix: '/api/jobs' });
   await app.register(ingestRoutes, { prefix: '/api/ingest' });
   await app.register(scoringRoutes, { prefix: '/api/jobs' });
+  await app.register(searchRoutes, { prefix: '/api/search' });
 }

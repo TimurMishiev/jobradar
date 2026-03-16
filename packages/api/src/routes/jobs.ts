@@ -31,6 +31,8 @@ export async function jobRoutes(app: FastifyInstance) {
       action?: string;
       hideIgnored?: string;
       postedWithin?: string;
+      location?: string;
+      title?: string;
     };
 
     const page = Math.max(1, parseInt(query.page ?? '1', 10) || 1);
@@ -58,6 +60,10 @@ export async function jobRoutes(app: FastifyInstance) {
     // company is a free-text label (e.g. 'Anthropic') — safe because Prisma parameterizes it
     const company = typeof query.company === 'string' && query.company.length <= 100
       ? query.company : undefined;
+    const location = typeof query.location === 'string' && query.location.trim().length > 0 && query.location.length <= 100
+      ? query.location.trim() : undefined;
+    const title = typeof query.title === 'string' && query.title.trim().length > 0 && query.title.length <= 100
+      ? query.title.trim() : undefined;
 
     const where: Prisma.JobWhereInput = {
       isActive: true,
@@ -65,6 +71,8 @@ export async function jobRoutes(app: FastifyInstance) {
       ...(company ? { company } : {}),
       ...(remoteType ? { remoteType } : {}),
       ...(seniority ? { seniorityGuess: seniority } : {}),
+      ...(location ? { location: { contains: location, mode: 'insensitive' } } : {}),
+      ...(title ? { title: { contains: title, mode: 'insensitive' } } : {}),
     };
 
     // Filter to jobs matching a specific user action
