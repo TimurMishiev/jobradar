@@ -68,19 +68,19 @@
   --bg-input:       #ffffff;
   --bg-nav:         rgba(245, 245, 245, 0.92);
 
-  --border-subtle:  #e8e8e8;
-  --border:         #e0e0e0;
-  --border-muted:   #d8d8d8;
-  --border-hover:   #b8b8b8;
+  --border-subtle:  #d8d8d8;
+  --border:         #cccccc;
+  --border-muted:   #c0c0c0;
+  --border-hover:   #999999;
 
   --text-primary:   #0a0a0a;
   --text-body:      #171717;
-  --text-secondary: #404040;
-  --text-muted:     #525252;
-  --text-faint:     #737373;
-  --text-disabled:  #a3a3a3;
-  --text-nav:       #737373;
-  --nav-active-bg:  #e8e8e8;
+  --text-secondary: #2e2e2e;
+  --text-muted:     #404040;
+  --text-faint:     #595959;
+  --text-disabled:  #6b6b6b;
+  --text-nav:       #595959;
+  --nav-active-bg:  #e0e0e0;
   --nav-active-text:#0a0a0a;
 
   --accent:         #2563eb;
@@ -112,9 +112,9 @@
   --purple-bg:      #f5f3ff;
   --purple-border:  #ddd6fe;
 
-  --score-pending-bg:     #f0f0f0;
-  --score-pending-color:  #a3a3a3;
-  --score-pending-border: #e0e0e0;
+  --score-pending-bg:     #e8e8e8;
+  --score-pending-color:  #6b6b6b;
+  --score-pending-border: #cccccc;
 
   --new-badge-bg:     rgba(22, 163, 74, 0.08);
   --new-badge-border: rgba(22, 163, 74, 0.25);
