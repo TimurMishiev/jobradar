@@ -161,20 +161,24 @@ function parseWorkdayPostedOn(value: string | null): Date | null {
 export function normalizeWorkdayJob(
   job: RawWorkdayJob,
   company: CompanyConfig,
-): NormalizedJobInput {
+): NormalizedJobInput | null {
   // bulletFields[0] = requisitionId, bulletFields[1] = location (if present)
   const reqId = job.bulletFields?.[0] ?? '';
   const location = job.bulletFields?.[1] ?? null;
   // Use requisitionId as the stable external ID; fall back to externalPath slug
   const externalId = reqId || job.externalPath.split('_').pop() || job.externalPath.replace(/[^a-zA-Z0-9_-]/g, '-');
-  const url = `https://${company.workdayHost}${job.externalPath}`;
+  // Public Workday URL includes language + board prefix: /en-US/{board}/job/...
+  const url = `https://${company.workdayHost}/en-US/${company.workdayBoard}${job.externalPath}`;
+
+  // Skip jobs with no title — these are partially-published internal roles
+  if (!job.title) return null;
 
   return {
     sourceType: 'workday',
     sourceName: 'Workday',
     externalJobId: externalId,
     company: company.name,
-    title: job.title || '(Untitled)',
+    title: job.title,
     url,
     location,
     remoteType: normalizeRemoteType(location),

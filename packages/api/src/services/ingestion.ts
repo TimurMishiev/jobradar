@@ -54,7 +54,7 @@ async function fetchAndNormalize(company: CompanyConfig): Promise<NormalizedJobI
     case 'workday': {
       const connector = new WorkdayConnector(company);
       const jobs = await connector.fetch() as RawWorkdayJob[];
-      return jobs.map((j) => normalizeWorkdayJob(j, company));
+      return jobs.map((j) => normalizeWorkdayJob(j, company)).filter((j): j is NormalizedJobInput => j !== null);
     }
     case 'meta': {
       const connector = new MetaConnector(company);

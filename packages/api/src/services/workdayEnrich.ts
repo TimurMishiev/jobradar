@@ -35,10 +35,13 @@ export async function enrichWorkdayJob(jobId: string): Promise<void> {
   const company = TARGET_COMPANIES.find((c) => c.ats === 'workday');
   if (!company?.workdayHost || !company?.workdayBoard) return;
 
-  // Extract the externalPath from the job URL: https://host/job/City/Title_Rid → /job/City/Title_Rid
+  // Extract the /job/... portion from the URL.
+  // URL format: https://host/en-US/Board/job/City/Title_Rid (new) or https://host/job/... (old)
   let externalPath: string;
   try {
-    externalPath = new URL(job.url).pathname;
+    const pathname = new URL(job.url).pathname;
+    const jobIdx = pathname.indexOf('/job/');
+    externalPath = jobIdx !== -1 ? pathname.slice(jobIdx) : pathname;
   } catch {
     return;
   }
