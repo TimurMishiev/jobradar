@@ -15,7 +15,7 @@ export async function jobRoutes(app: FastifyInstance) {
   //   seniority            — filter by seniorityGuess
   //   action               — show only jobs with this user action (SAVED | APPLIED | IGNORED)
   //   hideIgnored          — 'true' to exclude jobs the user has ignored
-  //   postedWithin         — days since posting: 30 | 60 | 90 (default) | 'all'
+  //   postedWithin         — days since posting: 1 | 3 | 7 (default) | 14 | 30 | 'all'
   app.get('/', async (request) => {
     const query = request.query as {
       page?: string;

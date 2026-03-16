@@ -7,7 +7,7 @@ import JobCard from '../components/JobCard';
 export default function SavedPage() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['jobs', { action: 'SAVED' }],
-    queryFn: () => apiFetch<JobFeedResponse>('/api/jobs?action=SAVED&limit=100'),
+    queryFn: () => apiFetch<JobFeedResponse>('/api/jobs?action=SAVED&limit=100&postedWithin=all'),
   });
 
   const jobs = data?.data ?? [];

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { apiFetch } from '../lib/api';
 import type { JobFeedResponse, JobScore } from '../lib/types';
@@ -78,6 +78,7 @@ export default function FeedPage() {
     queryFn: () => apiFetch<JobFeedResponse>(`/api/jobs?${params}`),
   });
 
+  const queryClient = useQueryClient();
   const [isScoring, setIsScoring] = useState(false);
   const [scoredCount, setScoredCount] = useState(0);
 
@@ -99,6 +100,7 @@ export default function FeedPage() {
     }
 
     setIsScoring(false);
+    queryClient.invalidateQueries({ queryKey: ['jobs'] });
   };
 
   return (

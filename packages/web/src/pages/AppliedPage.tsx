@@ -7,7 +7,7 @@ import JobCard from '../components/JobCard';
 export default function AppliedPage() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['jobs', { action: 'APPLIED' }],
-    queryFn: () => apiFetch<JobFeedResponse>('/api/jobs?action=APPLIED&limit=100'),
+    queryFn: () => apiFetch<JobFeedResponse>('/api/jobs?action=APPLIED&limit=100&postedWithin=all'),
   });
 
   const jobs = data?.data ?? [];

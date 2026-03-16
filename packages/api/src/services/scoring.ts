@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma';
 import { getLocalUser } from '../lib/user';
 
 const MODEL = 'gpt-4o-mini';
+const OPENAI_TIMEOUT_MS = 30_000;
 
 interface ScoringOutput {
   score: number;
@@ -101,12 +102,15 @@ export async function scoreJob(jobId: string): Promise<{
     resumeText: resume?.textContent ?? null,
   });
 
-  const completion = await client.chat.completions.create({
-    model: MODEL,
-    response_format: { type: 'json_object' },
-    messages: [{ role: 'user', content: prompt }],
-    temperature: 0.2,
-  });
+  const completion = await client.chat.completions.create(
+    {
+      model: MODEL,
+      response_format: { type: 'json_object' },
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.2,
+    },
+    { signal: AbortSignal.timeout(OPENAI_TIMEOUT_MS) },
+  );
 
   const raw = completion.choices[0]?.message?.content ?? '{}';
 
@@ -117,8 +121,9 @@ export async function scoreJob(jobId: string): Promise<{
     throw new Error(`OpenAI returned invalid JSON: ${raw.slice(0, 200)}`);
   }
 
-  // Clamp score to 0-100
-  const score = Math.max(0, Math.min(100, Math.round(output.score ?? 0)));
+  // Clamp score to 0-100; guard against NaN in case the model returns a non-numeric value
+  const rawScore = Number(output.score);
+  const score = Number.isFinite(rawScore) ? Math.max(0, Math.min(100, Math.round(rawScore))) : 0;
   const fitCategory =
     ['high', 'medium', 'low'].includes(output.fitCategory) ? output.fitCategory : null;
 
