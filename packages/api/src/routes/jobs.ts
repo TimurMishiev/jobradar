@@ -15,6 +15,7 @@ export async function jobRoutes(app: FastifyInstance) {
   //   seniority            — filter by seniorityGuess
   //   action               — show only jobs with this user action (SAVED | APPLIED | IGNORED)
   //   hideIgnored          — 'true' to exclude jobs the user has ignored
+  //   postedWithin         — days since posting: 30 | 60 | 90 (default) | 'all'
   app.get('/', async (request) => {
     const query = request.query as {
       page?: string;
@@ -24,6 +25,7 @@ export async function jobRoutes(app: FastifyInstance) {
       seniority?: string;
       action?: string;
       hideIgnored?: string;
+      postedWithin?: string;
     };
 
     const page = Math.max(1, parseInt(query.page ?? '1', 10) || 1);
@@ -33,8 +35,19 @@ export async function jobRoutes(app: FastifyInstance) {
     const user = await getLocalUser();
     const userId = user?.id ?? '__no_user__';
 
+    // Default to 90 days; pass 'all' to disable the cutoff
+    const VALID_DAYS = [30, 60, 90];
+    const rawDays = query.postedWithin;
+    const parsedDays = rawDays === 'all' ? null : parseInt(rawDays ?? '90', 10);
+    const postedWithinDays = parsedDays !== null && VALID_DAYS.includes(parsedDays) ? parsedDays : 90;
+    const postedAfter =
+      rawDays === 'all'
+        ? undefined
+        : new Date(Date.now() - postedWithinDays * 24 * 60 * 60 * 1000);
+
     const where: Prisma.JobWhereInput = {
       isActive: true,
+      ...(postedAfter ? { postedAt: { gte: postedAfter } } : {}),
       ...(query.company ? { company: query.company } : {}),
       ...(query.remoteType ? { remoteType: query.remoteType } : {}),
       ...(query.seniority ? { seniorityGuess: query.seniority } : {}),

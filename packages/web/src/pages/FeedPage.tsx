@@ -24,12 +24,20 @@ const SENIORITY_OPTIONS = [
 
 const COMPANIES = ['Anthropic', 'OpenAI', 'Anduril', 'Palantir', 'Shield AI'];
 
+const POSTED_WITHIN_OPTIONS = [
+  { value: '30', label: 'Last 30 days' },
+  { value: '60', label: 'Last 60 days' },
+  { value: '90', label: 'Last 90 days' },
+  { value: 'all', label: 'All time' },
+];
+
 export default function FeedPage() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const company = searchParams.get('company') ?? '';
   const remoteType = searchParams.get('remoteType') ?? '';
   const seniority = searchParams.get('seniority') ?? '';
+  const postedWithin = searchParams.get('postedWithin') ?? '90';
   const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10) || 1);
 
   const setParam = (key: string, value: string) => {
@@ -49,21 +57,22 @@ export default function FeedPage() {
     setSearchParams(next);
   };
 
-  const hasFilters = company || remoteType || seniority;
+  const hasFilters = company || remoteType || seniority || postedWithin !== '90';
 
-  const clearFilters = () => setSearchParams(new URLSearchParams());
+  const clearFilters = () => setSearchParams(new URLSearchParams({ postedWithin: '90' }));
 
   const params = new URLSearchParams({
     page: String(page),
     limit: '25',
     hideIgnored: 'true',
+    postedWithin,
     ...(company && { company }),
     ...(remoteType && { remoteType }),
     ...(seniority && { seniority }),
   });
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['jobs', { company, remoteType, seniority, page }],
+    queryKey: ['jobs', { company, remoteType, seniority, postedWithin, page }],
     queryFn: () => apiFetch<JobFeedResponse>(`/api/jobs?${params}`),
   });
 
@@ -138,6 +147,16 @@ export default function FeedPage() {
           onChange={(e) => setParam('seniority', e.target.value)}
         >
           {SENIORITY_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+
+        <select
+          className="filter-select"
+          value={postedWithin}
+          onChange={(e) => setParam('postedWithin', e.target.value)}
+        >
+          {POSTED_WITHIN_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>
           ))}
         </select>
