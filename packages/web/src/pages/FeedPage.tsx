@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { apiFetch } from '../lib/api';
-import type { JobFeedResponse } from '../lib/types';
+import type { JobFeedResponse, JobScore } from '../lib/types';
 import JobCard from '../components/JobCard';
 
 const REMOTE_OPTIONS = [
@@ -67,13 +67,47 @@ export default function FeedPage() {
     queryFn: () => apiFetch<JobFeedResponse>(`/api/jobs?${params}`),
   });
 
+  const [isScoring, setIsScoring] = useState(false);
+  const [scoredCount, setScoredCount] = useState(0);
+
+  const scoreVisibleJobs = async () => {
+    if (!data) return;
+    const unscored = data.data.filter((j) => j.scores.length === 0);
+    if (unscored.length === 0) return;
+
+    setIsScoring(true);
+    setScoredCount(0);
+
+    for (const job of unscored) {
+      try {
+        await apiFetch<JobScore>(`/api/jobs/${job.id}/score`, { method: 'POST' });
+        setScoredCount((n) => n + 1);
+      } catch {
+        // Skip failed jobs silently — one bad job shouldn't stop the rest
+      }
+    }
+
+    setIsScoring(false);
+  };
+
   return (
     <div>
       <div className="page-header">
         <h2 className="page-title">Job Feed</h2>
-        {data && (
-          <span className="page-count">{data.pagination.total.toLocaleString()} jobs</span>
-        )}
+        <div className="page-header-actions">
+          {data && (
+            <span className="page-count">{data.pagination.total.toLocaleString()} jobs</span>
+          )}
+          {data && data.data.some((j) => j.scores.length === 0) && (
+            <button
+              className="btn-score"
+              onClick={scoreVisibleJobs}
+              disabled={isScoring}
+            >
+              {isScoring ? `Scoring... ${scoredCount}/${data.data.filter((j) => j.scores.length === 0).length}` : 'Score visible jobs'}
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="filters">

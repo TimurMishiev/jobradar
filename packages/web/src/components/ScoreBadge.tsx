@@ -3,9 +3,14 @@ import type { JobScore } from '../lib/types';
 
 interface Props {
   score: JobScore | null;
+  isScoring?: boolean;
 }
 
-export default function ScoreBadge({ score }: Props) {
+export default function ScoreBadge({ score, isScoring }: Props) {
+  if (isScoring && !score) {
+    return <span className="score-badge score-badge--pending">...</span>;
+  }
+
   if (!score) {
     return <span className="score-badge score-badge--pending">–</span>;
   }

@@ -79,9 +79,36 @@ input, select, textarea { font: inherit; }
 
 .page-header {
   display: flex;
-  align-items: baseline;
-  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 20px;
+}
+
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-score {
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  background: #1d4ed8;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-score:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.btn-score:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .page-title {

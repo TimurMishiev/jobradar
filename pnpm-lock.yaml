@@ -20,18 +20,21 @@ importers:
       '@fastify/multipart':
         specifier: ^9.0.0
         version: 9.4.0
+      '@jobradar/shared':
+        specifier: workspace:*
+        version: link:../shared
       '@prisma/client':
         specifier: ^6.0.0
         version: 6.19.2(prisma@6.19.2(typescript@5.9.3))(typescript@5.9.3)
-      '@signalhire/shared':
-        specifier: workspace:*
-        version: link:../shared
       dotenv:
         specifier: ^16.4.5
         version: 16.6.1
       fastify:
         specifier: ^5.0.0
         version: 5.8.2
+      openai:
+        specifier: ^6.29.0
+        version: 6.29.0
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -54,7 +57,7 @@ importers:
 
   packages/web:
     dependencies:
-      '@signalhire/shared':
+      '@jobradar/shared':
         specifier: workspace:*
         version: link:../shared
       '@tanstack/react-query':
@@ -970,6 +973,18 @@ packages:
   on-exit-leak-free@2.1.2:
     resolution: {integrity: sha512-0eJJY6hXLGf1udHwfNftBqH+g73EU4B504nZeKpz1sYRKafAghwxEJunB2O7rDZkL4PGfsMVnTXZ2EjibbqcsA==}
     engines: {node: '>=14.0.0'}
+
+  openai@6.29.0:
+    resolution: {integrity: sha512-YxoArl2BItucdO89/sN6edksV0x47WUTgkgVfCgX7EuEMhbirENsgYe5oO4LTjBL9PtdKtk2WqND1gSLcTd2yw==}
+    hasBin: true
+    peerDependencies:
+      ws: ^8.18.0
+      zod: ^3.25 || ^4.0
+    peerDependenciesMeta:
+      ws:
+        optional: true
+      zod:
+        optional: true
 
   pathe@2.0.3:
     resolution: {integrity: sha512-WUjGcAqP1gQacoQe+OBJsFA7Ld4DyXuUIjZ5cc75cLHvJ7dtNsTugphxIADwspS+AraAUePCKrSVtPLFj/F88w==}
@@ -1951,6 +1966,8 @@ snapshots:
   ohash@2.0.11: {}
 
   on-exit-leak-free@2.1.2: {}
+
+  openai@6.29.0: {}
 
   pathe@2.0.3: {}
 

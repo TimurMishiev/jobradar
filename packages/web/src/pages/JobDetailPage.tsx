@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '../lib/api';
 import type { JobWithDetails } from '../lib/types';
 import ActionButtons from '../components/ActionButtons';
 import ScoreBadge from '../components/ScoreBadge';
+import { useScoreJob } from '../hooks/useScoreJob';
 
 export default function JobDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -15,6 +16,15 @@ export default function JobDetailPage() {
     queryFn: () => apiFetch<JobWithDetails>(`/api/jobs/${id}`),
     enabled: Boolean(id),
   });
+
+  const { mutate: scoreJob, isPending: isScoring } = useScoreJob(id!);
+
+  // Auto-score when the job loads and has no score yet
+  useEffect(() => {
+    if (job && job.scores.length === 0) {
+      scoreJob();
+    }
+  }, [job?.id]);
 
   if (isLoading) return <p className="state-message">Loading...</p>;
   if (isError || !job) return <p className="state-message state-message--error">Job not found.</p>;
@@ -47,7 +57,7 @@ export default function JobDetailPage() {
           </div>
           <h1 className="job-detail-title">{job.title}</h1>
         </div>
-        <ScoreBadge score={score} />
+        <ScoreBadge score={score} isScoring={isScoring} />
       </div>
 
       {score?.explanation && (
