@@ -143,14 +143,23 @@ export async function runGapAnalysis(): Promise<GapAnalysisInsight> {
     throw new Error(`OpenAI returned invalid JSON: ${raw.slice(0, 200)}`);
   }
 
+  // Sanitize — validate shapes AND cap string lengths before persisting
+  const clamp = (s: unknown, max: number, fallback = ''): string =>
+    typeof s === 'string' ? s.slice(0, max) : fallback;
+
   const payload: GapAnalysisPayload = {
-    summary: typeof output.summary === 'string' ? output.summary : '',
+    summary:        clamp(output.summary, 600),
+    recommendation: clamp(output.recommendation, 400),
     topGaps: Array.isArray(output.topGaps)
       ? output.topGaps
           .filter((g) => typeof g.skill === 'string' && typeof g.count === 'number')
           .slice(0, 6)
+          .map((g) => ({
+            skill:   clamp(g.skill, 80),
+            count:   Math.max(0, Math.round(g.count)),
+            context: clamp(g.context, 200),
+          }))
       : [],
-    recommendation: typeof output.recommendation === 'string' ? output.recommendation : '',
     basedOnJobCount: scoredJobs.length,
     minScore: MIN_SCORE,
   };

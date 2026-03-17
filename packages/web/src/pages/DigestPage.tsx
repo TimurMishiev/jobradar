@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiFetch } from '../lib/api';
+import { apiFetch, ApiError } from '../lib/api';
 import type { DigestResponse, JobWithDetails, BriefingInsightResponse, GapAnalysisInsightResponse } from '../lib/types';
 import JobCard from '../components/JobCard';
 
@@ -85,7 +85,11 @@ function BriefingPanel() {
           {generate.isPending ? 'Generating…' : 'Generate Briefing'}
         </button>
         {generate.isError && (
-          <p className="briefing-error">Failed to generate briefing. Check that your OpenAI key is configured.</p>
+          <p className="briefing-error">
+            {generate.error instanceof ApiError && generate.error.status === 429
+              ? generate.error.message
+              : 'Failed to generate briefing. Check that your OpenAI key is configured.'}
+          </p>
         )}
       </div>
     );
@@ -108,6 +112,14 @@ function BriefingPanel() {
           </button>
         </div>
       </div>
+
+      {generate.isError && (
+        <p className="briefing-error">
+          {generate.error instanceof ApiError && generate.error.status === 429
+            ? generate.error.message
+            : 'Failed to refresh briefing.'}
+        </p>
+      )}
 
       <p className="briefing-headline">{payload.headline}</p>
 
@@ -191,7 +203,11 @@ function GapAnalysisPanel() {
           {generate.isPending ? 'Analyzing…' : 'Run Analysis'}
         </button>
         {generate.isError && (
-          <p className="briefing-error">Failed to run analysis. Check that your OpenAI key is configured.</p>
+          <p className="briefing-error">
+            {generate.error instanceof ApiError && generate.error.status === 429
+              ? generate.error.message
+              : 'Failed to run analysis. Check that your OpenAI key is configured.'}
+          </p>
         )}
       </div>
     );
@@ -217,6 +233,14 @@ function GapAnalysisPanel() {
           </button>
         </div>
       </div>
+
+      {generate.isError && (
+        <p className="briefing-error">
+          {generate.error instanceof ApiError && generate.error.status === 429
+            ? generate.error.message
+            : 'Failed to refresh analysis.'}
+        </p>
+      )}
 
       <p className="gap-panel-summary">{payload.summary}</p>
 

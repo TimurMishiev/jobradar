@@ -138,17 +138,34 @@ export async function runDailyBriefing(): Promise<BriefingInsight> {
     throw new Error(`OpenAI returned invalid JSON: ${raw.slice(0, 200)}`);
   }
 
-  // Sanitize — never trust raw GPT output shapes
+  // Sanitize — validate shapes AND cap string lengths before persisting
+  const clamp = (s: unknown, max: number, fallback = ''): string =>
+    typeof s === 'string' ? s.slice(0, max) : fallback;
+
   const payload: DailyBriefingPayload = {
-    headline: typeof output.headline === 'string' ? output.headline : 'No headline available.',
+    headline: clamp(output.headline, 300, 'No headline available.'),
     topPicks: Array.isArray(output.topPicks)
       ? output.topPicks
           .filter((p) => typeof p.jobId === 'string' && typeof p.title === 'string')
           .slice(0, 3)
+          .map((p) => ({
+            jobId:   clamp(p.jobId, 40),
+            title:   clamp(p.title, 120),
+            company: clamp(p.company, 80),
+            score:   typeof p.score === 'number' ? Math.max(0, Math.min(100, Math.round(p.score))) : 0,
+            reason:  clamp(p.reason, 200),
+          }))
       : [],
-    appliedNudge: typeof output.appliedNudge === 'string' ? output.appliedNudge : null,
+    appliedNudge: typeof output.appliedNudge === 'string' ? clamp(output.appliedNudge, 200) : null,
     watchlistHighlights: Array.isArray(output.watchlistHighlights)
-      ? output.watchlistHighlights.filter((w) => typeof w.company === 'string')
+      ? output.watchlistHighlights
+          .filter((w) => typeof w.company === 'string')
+          .slice(0, 10)
+          .map((w) => ({
+            company:  clamp(w.company, 80),
+            newRoles: typeof w.newRoles === 'number' ? Math.max(0, Math.round(w.newRoles)) : 0,
+            topRole:  typeof w.topRole === 'string' ? clamp(w.topRole, 120) : null,
+          }))
       : [],
   };
 

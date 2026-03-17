@@ -3,6 +3,28 @@ import { prisma } from '../lib/prisma';
 import { runDailyBriefing, DailyBriefingPayload } from '../agents/dailyBriefing';
 import { runGapAnalysis, GapAnalysisPayload } from '../agents/gapAnalysis';
 
+// Minimum time between regenerations per insight type — prevents accidental credit burn
+const COOLDOWNS_MS: Record<string, number> = {
+  daily_briefing: 5 * 60 * 1_000,   // 5 minutes
+  gap_analysis:   15 * 60 * 1_000,  // 15 minutes
+};
+
+async function isOnCooldown(type: string): Promise<{ cooling: boolean; retryAfterSec: number }> {
+  const last = await prisma.agentInsight.findFirst({
+    where: { type },
+    orderBy: { generatedAt: 'desc' },
+    select: { generatedAt: true },
+  });
+  if (!last) return { cooling: false, retryAfterSec: 0 };
+
+  const elapsed = Date.now() - last.generatedAt.getTime();
+  const cooldown = COOLDOWNS_MS[type] ?? 5 * 60 * 1_000;
+  if (elapsed < cooldown) {
+    return { cooling: true, retryAfterSec: Math.ceil((cooldown - elapsed) / 1_000) };
+  }
+  return { cooling: false, retryAfterSec: 0 };
+}
+
 export async function insightRoutes(app: FastifyInstance) {
   // GET /api/insights/daily-briefing — returns latest persisted briefing
   app.get('/daily-briefing', async (_request, reply) => {
@@ -24,6 +46,12 @@ export async function insightRoutes(app: FastifyInstance) {
   app.post('/daily-briefing', async (_request, reply) => {
     if (!process.env.OPENAI_API_KEY) {
       return reply.code(503).send({ error: 'OPENAI_API_KEY not configured' });
+    }
+
+    const { cooling, retryAfterSec } = await isOnCooldown('daily_briefing');
+    if (cooling) {
+      reply.header('Retry-After', String(retryAfterSec));
+      return reply.code(429).send({ error: `Briefing was just generated. Try again in ${retryAfterSec}s.` });
     }
 
     try {
@@ -55,6 +83,12 @@ export async function insightRoutes(app: FastifyInstance) {
   app.post('/gap-analysis', async (_request, reply) => {
     if (!process.env.OPENAI_API_KEY) {
       return reply.code(503).send({ error: 'OPENAI_API_KEY not configured' });
+    }
+
+    const { cooling, retryAfterSec } = await isOnCooldown('gap_analysis');
+    if (cooling) {
+      reply.header('Retry-After', String(retryAfterSec));
+      return reply.code(429).send({ error: `Gap analysis was just generated. Try again in ${retryAfterSec}s.` });
     }
 
     try {

@@ -103,8 +103,8 @@ export default function JobCard({ job }: Props) {
 
       {hasSignals && (
         <div className="card-signals">
-          {topReasons.map((reason, i) => (
-            <span key={i} className="card-signal card-signal--match">
+          {topReasons.map((reason) => (
+            <span key={reason} className="card-signal card-signal--match">
               <span className="card-signal-icon">✓</span>
               {reason}
             </span>
