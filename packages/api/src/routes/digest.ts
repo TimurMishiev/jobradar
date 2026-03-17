@@ -73,6 +73,24 @@ export async function digestRoutes(app: FastifyInstance) {
     // Sort topScored by actual score descending (the DB orderBy above is approximate)
     topScored.sort((a, b) => (b.scores[0]?.score ?? 0) - (a.scores[0]?.score ?? 0));
 
+    // Batch-fetch score history for all digest jobs and attach to signalsCtx
+    if (signalsCtx && user) {
+      const allJobs = [...topScored, ...newToday, ...watchlist];
+      const jobIds = [...new Set(allJobs.map((j) => j.id))];
+      if (jobIds.length > 0) {
+        const historyRows = await prisma.scoreHistory.findMany({
+          where: { jobId: { in: jobIds }, userId: user.id },
+          orderBy: { createdAt: 'asc' },
+          select: { jobId: true, score: true },
+        });
+        for (const row of historyRows) {
+          const list = signalsCtx.scoreHistoryByJob.get(row.jobId) ?? [];
+          list.push({ score: row.score });
+          signalsCtx.scoreHistoryByJob.set(row.jobId, list);
+        }
+      }
+    }
+
     const withSignals = (jobs: typeof topScored) =>
       jobs.map((job) => ({
         ...job,

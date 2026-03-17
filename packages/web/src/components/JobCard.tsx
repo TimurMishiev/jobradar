@@ -46,10 +46,11 @@ const SENIORITY_LABEL: Record<string, string> = {
 };
 
 const OPP_SIGNAL_ICON: Record<OpportunitySignalKind, string> = {
-  preferred_company: '★',
-  score_improved:    '↑',
-  prior_interaction: '↩',
-  role_open:         '⏱',
+  preferred_company:  '★',
+  score_improved:     '↑',
+  score_trending_up:  '↑↑',
+  prior_interaction:  '↩',
+  role_open:          '⏱',
 };
 
 function priorityTier(score: number): 'high' | 'medium' | null {

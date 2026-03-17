@@ -106,6 +106,21 @@ export async function jobRoutes(app: FastifyInstance) {
       user ? fetchSignalsContext(user.id) : Promise.resolve(null),
     ]);
 
+    // Batch-fetch score history for this page of jobs and attach to signalsCtx
+    if (signalsCtx && user && jobs.length > 0) {
+      const jobIds = jobs.map((j) => j.id);
+      const historyRows = await prisma.scoreHistory.findMany({
+        where: { jobId: { in: jobIds }, userId: user.id },
+        orderBy: { createdAt: 'asc' },
+        select: { jobId: true, score: true },
+      });
+      for (const row of historyRows) {
+        const list = signalsCtx.scoreHistoryByJob.get(row.jobId) ?? [];
+        list.push({ score: row.score });
+        signalsCtx.scoreHistoryByJob.set(row.jobId, list);
+      }
+    }
+
     const data = jobs.map((job) => ({
       ...job,
       opportunitySignals: signalsCtx ? computeSignals(job, signalsCtx) : [],
@@ -135,6 +150,18 @@ export async function jobRoutes(app: FastifyInstance) {
     ]);
 
     if (!job) return reply.code(404).send({ error: 'Job not found' });
+
+    // Populate score history for this single job
+    if (signalsCtx && user) {
+      const historyRows = await prisma.scoreHistory.findMany({
+        where: { jobId: id, userId: user.id },
+        orderBy: { createdAt: 'asc' },
+        select: { jobId: true, score: true },
+      });
+      if (historyRows.length > 0) {
+        signalsCtx.scoreHistoryByJob.set(id, historyRows.map((r) => ({ score: r.score })));
+      }
+    }
 
     // Lazily fetch and cache Workday job descriptions on first open
     if (job.sourceType === 'workday' && !job.descriptionNormalized) {

@@ -31,6 +31,7 @@ export interface JobScore {
 export type OpportunitySignalKind =
   | 'preferred_company'
   | 'score_improved'
+  | 'score_trending_up'
   | 'prior_interaction'
   | 'role_open';
 

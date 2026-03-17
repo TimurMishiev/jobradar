@@ -706,6 +706,13 @@ input, select, textarea { font: inherit; }
   border-color: var(--green-border);
 }
 
+.opp-signal--score_trending_up {
+  background: var(--green-bg);
+  color: var(--green-light);
+  border-color: var(--green-border);
+  font-weight: 600;
+}
+
 .opp-signal--prior_interaction {
   background: var(--accent-bg);
   color: var(--accent-text);

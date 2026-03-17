@@ -5,6 +5,7 @@ import { prisma } from './prisma';
 export type OpportunitySignalKind =
   | 'preferred_company'  // company is in the user's watchlist
   | 'score_improved'     // score went up after a rescore
+  | 'score_trending_up'  // score has risen monotonically over last 3 rescores (Δ≥10)
   | 'prior_interaction'  // user saved/applied to another role at this company
   | 'role_open';         // role has been open ≥ STALE_THRESHOLD_DAYS days
 
@@ -19,6 +20,8 @@ export interface SignalsContext {
   preferredCompanies: Set<string>;   // company names, lowercased
   appliedCompanies: Set<string>;     // companies where user has APPLIED, lowercased
   savedCompanies: Set<string>;       // companies where user has SAVED, lowercased
+  // Populated after job IDs are known — one batch fetch per request
+  scoreHistoryByJob: Map<string, { score: number }[]>; // jobId → entries ascending by createdAt
 }
 
 export async function fetchSignalsContext(userId: string): Promise<SignalsContext> {
@@ -46,15 +49,23 @@ export async function fetchSignalsContext(userId: string): Promise<SignalsContex
     else if (a.action === 'SAVED') savedCompanies.add(key);
   }
 
-  return { preferredCompanies, appliedCompanies, savedCompanies };
+  return {
+    preferredCompanies,
+    appliedCompanies,
+    savedCompanies,
+    scoreHistoryByJob: new Map(), // populated after job IDs are known
+  };
 }
 
 // ─── Computation ──────────────────────────────────────────────────────────────
 
 const ROLE_OPEN_THRESHOLD_DAYS = 14;
+const TREND_MIN_ENTRIES = 3;    // need at least 3 history points
+const TREND_MIN_DELTA = 10;     // total rise must be ≥10 points to count
 
 export function computeSignals(
   job: {
+    id: string;
     company: string;
     postedAt: Date | string | null;
     scores: Array<{ score: number; previousScore?: number | null }>;
@@ -80,6 +91,19 @@ export function computeSignals(
       kind: 'score_improved',
       label: `Score ↑ ${latestScore.previousScore}→${latestScore.score}`,
     });
+  }
+
+  // score_trending_up — score has risen monotonically over last 3 rescores with Δ≥10
+  const history = ctx.scoreHistoryByJob.get(job.id) ?? [];
+  if (history.length >= TREND_MIN_ENTRIES) {
+    const recent = history.slice(-TREND_MIN_ENTRIES); // last 3 in ascending order
+    const isMonotonic =
+      recent[1].score > recent[0].score &&
+      recent[2].score > recent[1].score;
+    const totalDelta = recent[2].score - recent[0].score;
+    if (isMonotonic && totalDelta >= TREND_MIN_DELTA) {
+      signals.push({ kind: 'score_trending_up', label: `↑↑ Score rising` });
+    }
   }
 
   // prior_interaction — saved/applied to another role at this company
