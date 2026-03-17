@@ -1258,6 +1258,238 @@ input, select, textarea { font: inherit; }
 
 .state-message--error { color: var(--red); }
 
+/* ─── Briefing Panel ──────────────────────────────────────────────────────────── */
+
+.briefing-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.briefing-panel--loading {
+  font-size: 13px;
+  color: var(--text-faint);
+  padding: 16px 20px;
+}
+
+.briefing-panel--empty {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.briefing-empty-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.briefing-empty-text p {
+  font-size: 13px;
+  color: var(--text-faint);
+  margin: 0;
+}
+
+.briefing-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  border-radius: 4px;
+  padding: 2px 7px;
+  align-self: flex-start;
+}
+
+.briefing-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.briefing-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.briefing-age {
+  font-size: 12px;
+  color: var(--text-disabled);
+}
+
+.briefing-refresh-btn {
+  font-size: 12px;
+  color: var(--text-faint);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-muted);
+  border-radius: 5px;
+  padding: 3px 10px;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.briefing-refresh-btn:hover:not(:disabled) {
+  color: var(--text-secondary);
+  border-color: var(--border-hover);
+}
+
+.briefing-refresh-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.briefing-generate-btn {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent-btn-text);
+  background: var(--accent-btn-bg);
+  border: 1px solid var(--accent-border);
+  border-radius: 6px;
+  padding: 7px 14px;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.briefing-generate-btn:hover:not(:disabled) {
+  background: var(--accent-btn-hover);
+  color: #fff;
+}
+
+.briefing-generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.briefing-error {
+  font-size: 12px;
+  color: var(--red);
+  margin: 0;
+  width: 100%;
+}
+
+.briefing-headline {
+  font-size: 14px;
+  color: var(--text-body);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.briefing-nudge {
+  font-size: 13px;
+  color: var(--amber);
+  background: var(--amber-bg);
+  border: 1px solid var(--amber-border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin: 0;
+}
+
+.briefing-picks { display: flex; flex-direction: column; gap: 8px; }
+
+.briefing-picks-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-disabled);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.briefing-picks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.briefing-pick {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-muted);
+  border-radius: 7px;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.briefing-pick:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card);
+}
+
+.briefing-pick-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.briefing-pick-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.briefing-pick-company {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.briefing-pick-reason {
+  font-size: 12px;
+  color: var(--text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.briefing-pick-score {
+  font-size: 12px;
+  font-weight: 700;
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.briefing-pick-score--high   { background: var(--green-bg);     color: var(--green);  border: 1px solid var(--green-border); }
+.briefing-pick-score--medium { background: var(--amber-mid-bg); color: var(--amber);  border: 1px solid var(--amber-mid-border); }
+.briefing-pick-score--low    { background: var(--red-bg);       color: var(--red);    border: 1px solid var(--red-border); }
+
+.briefing-watchlist { display: flex; flex-direction: column; gap: 8px; }
+
+.briefing-watchlist-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.briefing-watchlist-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.briefing-watchlist-company { font-weight: 600; color: var(--text-primary); }
+.briefing-watchlist-count   { color: var(--accent-text); font-size: 12px; }
+.briefing-watchlist-top     { color: var(--text-faint); font-size: 12px; }
+
 /* ─── Digest page ─────────────────────────────────────────────────────────────── */
 
 .digest-page { display: flex; flex-direction: column; gap: 40px; }

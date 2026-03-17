@@ -1,7 +1,8 @@
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '../lib/api';
-import type { DigestResponse, JobWithDetails } from '../lib/types';
+import type { DigestResponse, JobWithDetails, BriefingInsightResponse } from '../lib/types';
 import JobCard from '../components/JobCard';
 
 function timeAgo(iso: string): string {
@@ -40,11 +41,123 @@ function DigestSection({ title, subtitle, jobs, emptyMessage }: SectionProps) {
   );
 }
 
+function BriefingPanel() {
+  const queryClient = useQueryClient();
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['briefing'],
+    queryFn: () =>
+      apiFetch<BriefingInsightResponse>('/api/insights/daily-briefing').catch((err) => {
+        // 404 means no briefing yet — return null rather than throw
+        if (err?.status === 404 || (err instanceof Error && err.message.includes('404'))) return null;
+        throw err;
+      }),
+    staleTime: 10 * 60_000,
+    retry: false,
+  });
+
+  const generate = useMutation({
+    mutationFn: () => apiFetch<BriefingInsightResponse>('/api/insights/daily-briefing', { method: 'POST' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['briefing'] }),
+  });
+
+  if (isLoading) {
+    return <div className="briefing-panel briefing-panel--loading">Loading briefing…</div>;
+  }
+
+  if (isError) {
+    return null; // silently skip — don't break the digest page if briefing fails
+  }
+
+  // No briefing yet — show CTA
+  if (!data) {
+    return (
+      <div className="briefing-panel briefing-panel--empty">
+        <div className="briefing-empty-text">
+          <span className="briefing-label">AI Briefing</span>
+          <p>No briefing generated yet. Generate one to get a personalized summary of today's opportunities.</p>
+        </div>
+        <button
+          className="briefing-generate-btn"
+          onClick={() => generate.mutate()}
+          disabled={generate.isPending}
+        >
+          {generate.isPending ? 'Generating…' : 'Generate Briefing'}
+        </button>
+        {generate.isError && (
+          <p className="briefing-error">Failed to generate briefing. Check that your OpenAI key is configured.</p>
+        )}
+      </div>
+    );
+  }
+
+  const { payload, generatedAt } = data;
+
+  return (
+    <div className="briefing-panel">
+      <div className="briefing-header">
+        <span className="briefing-label">AI Briefing</span>
+        <div className="briefing-header-right">
+          <span className="briefing-age">Generated {timeAgo(generatedAt)}</span>
+          <button
+            className="briefing-refresh-btn"
+            onClick={() => generate.mutate()}
+            disabled={generate.isPending}
+          >
+            {generate.isPending ? 'Refreshing…' : 'Refresh'}
+          </button>
+        </div>
+      </div>
+
+      <p className="briefing-headline">{payload.headline}</p>
+
+      {payload.appliedNudge && (
+        <p className="briefing-nudge">{payload.appliedNudge}</p>
+      )}
+
+      {payload.topPicks.length > 0 && (
+        <div className="briefing-picks">
+          <span className="briefing-picks-label">Top picks</span>
+          <div className="briefing-picks-list">
+            {payload.topPicks.map((pick) => (
+              <Link key={pick.jobId} to={`/jobs/${pick.jobId}`} className="briefing-pick">
+                <div className="briefing-pick-left">
+                  <span className="briefing-pick-title">{pick.title}</span>
+                  <span className="briefing-pick-company">{pick.company}</span>
+                  <span className="briefing-pick-reason">{pick.reason}</span>
+                </div>
+                <span className={`briefing-pick-score briefing-pick-score--${pick.score >= 85 ? 'high' : pick.score >= 70 ? 'medium' : 'low'}`}>
+                  {pick.score}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {payload.watchlistHighlights.length > 0 && (
+        <div className="briefing-watchlist">
+          <span className="briefing-picks-label">Watchlist activity</span>
+          <div className="briefing-watchlist-list">
+            {payload.watchlistHighlights.map((w) => (
+              <span key={w.company} className="briefing-watchlist-item">
+                <span className="briefing-watchlist-company">{w.company}</span>
+                <span className="briefing-watchlist-count">{w.newRoles} new {w.newRoles === 1 ? 'role' : 'roles'}</span>
+                {w.topRole && <span className="briefing-watchlist-top">— {w.topRole}</span>}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function DigestPage() {
   const { data, isLoading, isError, dataUpdatedAt } = useQuery({
     queryKey: ['digest'],
     queryFn: () => apiFetch<DigestResponse>('/api/digest'),
-    staleTime: 5 * 60_000, // 5 minutes
+    staleTime: 5 * 60_000,
   });
 
   if (isLoading) return <p className="state-message">Loading digest...</p>;
@@ -55,12 +168,14 @@ export default function DigestPage() {
       <div className="page-header">
         <h1 className="page-title">Daily Digest</h1>
         <p className="page-subtitle">
-          Updated {timeAgo(data.generatedAt)}
+          Updated {timeAgo(new Date(dataUpdatedAt).toISOString())}
           {' · '}
           {data.newToday.length} new today
           {data.topScored.length > 0 && ` · ${data.topScored.length} strong matches`}
         </p>
       </div>
+
+      <BriefingPanel />
 
       {data.topScored.length > 0 && (
         <DigestSection

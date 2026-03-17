@@ -43,6 +43,33 @@ export interface Resume {
   updatedAt: string;
 }
 
+export interface BriefingTopPick {
+  jobId: string;
+  title: string;
+  company: string;
+  score: number;
+  reason: string;
+}
+
+export interface WatchlistHighlight {
+  company: string;
+  newRoles: number;
+  topRole: string | null;
+}
+
+export interface DailyBriefingPayload {
+  headline: string;
+  topPicks: BriefingTopPick[];
+  appliedNudge: string | null;
+  watchlistHighlights: WatchlistHighlight[];
+}
+
+export interface BriefingInsightResponse {
+  id: string;
+  generatedAt: string;
+  payload: DailyBriefingPayload;
+}
+
 export interface DigestResponse {
   generatedAt: string;
   topScored: JobWithDetails[];

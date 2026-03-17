@@ -6,6 +6,7 @@ import { ingestRoutes } from './ingest';
 import { scoringRoutes } from './scoring';
 import { searchRoutes } from './search';
 import { digestRoutes } from './digest';
+import { insightRoutes } from './insights';
 
 export async function registerRoutes(app: FastifyInstance) {
   await app.register(profileRoutes, { prefix: '/api/profile' });
@@ -15,4 +16,5 @@ export async function registerRoutes(app: FastifyInstance) {
   await app.register(scoringRoutes, { prefix: '/api/jobs' });
   await app.register(searchRoutes, { prefix: '/api/search' });
   await app.register(digestRoutes, { prefix: '/api/digest' });
+  await app.register(insightRoutes, { prefix: '/api/insights' });
 }
