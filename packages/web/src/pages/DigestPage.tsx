@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '../lib/api';
-import type { DigestResponse, JobWithDetails, BriefingInsightResponse } from '../lib/types';
+import type { DigestResponse, JobWithDetails, BriefingInsightResponse, GapAnalysisInsightResponse } from '../lib/types';
 import JobCard from '../components/JobCard';
 
 function timeAgo(iso: string): string {
@@ -153,6 +153,96 @@ function BriefingPanel() {
   );
 }
 
+function GapAnalysisPanel() {
+  const queryClient = useQueryClient();
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['gap-analysis'],
+    queryFn: () =>
+      apiFetch<GapAnalysisInsightResponse>('/api/insights/gap-analysis').catch((err) => {
+        if (err instanceof Error && err.message.includes('404')) return null;
+        throw err;
+      }),
+    staleTime: 30 * 60_000,
+    retry: false,
+  });
+
+  const generate = useMutation({
+    mutationFn: () =>
+      apiFetch<GapAnalysisInsightResponse>('/api/insights/gap-analysis', { method: 'POST' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['gap-analysis'] }),
+  });
+
+  if (isLoading) return null;
+  if (isError) return null;
+
+  if (!data) {
+    return (
+      <div className="gap-panel gap-panel--empty">
+        <div className="gap-panel-empty-text">
+          <span className="gap-panel-label">Resume Gap Analysis</span>
+          <p>Analyze recurring missing skills across your top-matched jobs.</p>
+        </div>
+        <button
+          className="briefing-generate-btn"
+          onClick={() => generate.mutate()}
+          disabled={generate.isPending}
+        >
+          {generate.isPending ? 'Analyzing…' : 'Run Analysis'}
+        </button>
+        {generate.isError && (
+          <p className="briefing-error">Failed to run analysis. Check that your OpenAI key is configured.</p>
+        )}
+      </div>
+    );
+  }
+
+  const { payload, generatedAt } = data;
+  const hasGaps = payload.topGaps.length > 0;
+
+  return (
+    <div className="gap-panel">
+      <div className="briefing-header">
+        <span className="gap-panel-label">Resume Gap Analysis</span>
+        <div className="briefing-header-right">
+          <span className="briefing-age">
+            {payload.basedOnJobCount} jobs · Generated {timeAgo(generatedAt)}
+          </span>
+          <button
+            className="briefing-refresh-btn"
+            onClick={() => generate.mutate()}
+            disabled={generate.isPending}
+          >
+            {generate.isPending ? 'Analyzing…' : 'Refresh'}
+          </button>
+        </div>
+      </div>
+
+      <p className="gap-panel-summary">{payload.summary}</p>
+
+      {hasGaps && (
+        <div className="gap-list">
+          {payload.topGaps.map((gap) => (
+            <div key={gap.skill} className="gap-item">
+              <div className="gap-item-left">
+                <span className="gap-item-skill">{gap.skill}</span>
+                <span className="gap-item-context">{gap.context}</span>
+              </div>
+              <span className="gap-item-count">
+                {gap.count} {gap.count === 1 ? 'job' : 'jobs'}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {payload.recommendation && (
+        <p className="gap-recommendation">{payload.recommendation}</p>
+      )}
+    </div>
+  );
+}
+
 export default function DigestPage() {
   const { data, isLoading, isError, dataUpdatedAt } = useQuery({
     queryKey: ['digest'],
@@ -176,6 +266,7 @@ export default function DigestPage() {
       </div>
 
       <BriefingPanel />
+      <GapAnalysisPanel />
 
       {data.topScored.length > 0 && (
         <DigestSection

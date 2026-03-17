@@ -1490,6 +1490,119 @@ input, select, textarea { font: inherit; }
 .briefing-watchlist-count   { color: var(--accent-text); font-size: 12px; }
 .briefing-watchlist-top     { color: var(--text-faint); font-size: 12px; }
 
+/* ─── Gap Analysis Panel ──────────────────────────────────────────────────────── */
+
+.gap-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.gap-panel--empty {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.gap-panel-empty-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gap-panel-empty-text p {
+  font-size: 13px;
+  color: var(--text-faint);
+  margin: 0;
+}
+
+.gap-panel-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--amber);
+  background: var(--amber-bg);
+  border: 1px solid var(--amber-border);
+  border-radius: 4px;
+  padding: 2px 7px;
+  align-self: flex-start;
+}
+
+.gap-panel-summary {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.gap-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gap-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-muted);
+  border-radius: 7px;
+}
+
+.gap-item-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.gap-item-skill {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.gap-item-context {
+  font-size: 12px;
+  color: var(--text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gap-item-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--amber);
+  background: var(--amber-bg);
+  border: 1px solid var(--amber-border);
+  border-radius: 4px;
+  padding: 2px 7px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.gap-recommendation {
+  font-size: 13px;
+  color: var(--text-secondary);
+  background: var(--bg-elevated);
+  border-left: 2px solid var(--accent);
+  border-radius: 0 4px 4px 0;
+  padding: 8px 12px;
+  margin: 0;
+  line-height: 1.5;
+}
+
 /* ─── Digest page ─────────────────────────────────────────────────────────────── */
 
 .digest-page { display: flex; flex-direction: column; gap: 40px; }

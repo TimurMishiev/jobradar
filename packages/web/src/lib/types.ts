@@ -70,6 +70,26 @@ export interface BriefingInsightResponse {
   payload: DailyBriefingPayload;
 }
 
+export interface SkillGap {
+  skill: string;
+  count: number;
+  context: string;
+}
+
+export interface GapAnalysisPayload {
+  summary: string;
+  topGaps: SkillGap[];
+  recommendation: string;
+  basedOnJobCount: number;
+  minScore: number;
+}
+
+export interface GapAnalysisInsightResponse {
+  id: string;
+  generatedAt: string;
+  payload: GapAnalysisPayload;
+}
+
 export interface DigestResponse {
   generatedAt: string;
   topScored: JobWithDetails[];
