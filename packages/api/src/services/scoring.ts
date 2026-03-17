@@ -190,8 +190,8 @@ export async function scoreUnscoredJobs(): Promise<void> {
   for (const job of jobs) {
     try {
       await scoreJob(job.id);
-    } catch {
-      // Individual failures are non-fatal — continue scoring the rest
+    } catch (err) {
+      console.error(`[scoring] scoreUnscoredJobs: failed job ${job.id}:`, err instanceof Error ? err.message : String(err));
     }
   }
 }
@@ -213,8 +213,8 @@ export async function rescoreAllJobs(): Promise<void> {
   for (const job of jobs) {
     try {
       await scoreJob(job.id);
-    } catch {
-      // Individual failures are non-fatal
+    } catch (err) {
+      console.error(`[scoring] rescoreAllJobs: failed job ${job.id}:`, err instanceof Error ? err.message : String(err));
     }
   }
 }
@@ -235,8 +235,8 @@ export async function scoreNewJobs(jobIds: string[]): Promise<void> {
   for (const job of jobs) {
     try {
       await scoreJob(job.id);
-    } catch {
-      // Non-fatal
+    } catch (err) {
+      console.error(`[scoring] scoreNewJobs: failed job ${job.id}:`, err instanceof Error ? err.message : String(err));
     }
   }
 }

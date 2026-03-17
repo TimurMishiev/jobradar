@@ -64,6 +64,12 @@ export async function resumeRoutes(app: FastifyInstance) {
     await fs.mkdir(userDir, { recursive: true });
     const fileId = randomUUID();
     const storagePath = path.join(userDir, `${fileId}.pdf`);
+
+    // Guard against path traversal (userId is always a cuid, but be explicit)
+    if (!path.resolve(storagePath).startsWith(path.resolve(UPLOADS_DIR))) {
+      return reply.code(400).send({ error: 'Invalid path' });
+    }
+
     await fs.writeFile(storagePath, buffer);
 
     const rawLabel = data.fields?.label;
@@ -135,7 +141,7 @@ export async function resumeRoutes(app: FastifyInstance) {
     });
 
     // New default resume — rescore ALL jobs so scores reflect the new resume
-    setImmediate(() => rescoreAllJobs().catch(() => {}));
+    setImmediate(() => rescoreAllJobs().catch((err) => console.error('[resumes] rescoreAllJobs failed:', err instanceof Error ? err.message : String(err))));
 
     return updated;
   });

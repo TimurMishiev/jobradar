@@ -1,27 +1,7 @@
 import type { SeniorityLevel, RemoteType, EmploymentType } from '@jobradar/shared';
 import { CompanyConfig } from '../companies';
 import { RawGreenhouseJob, RawLeverJob, RawAshbyJob, RawWorkdayJob, RawMetaJob, RawGoogleJob } from '../connectors/types';
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function stripHtml(html: string): string {
-  return (
-    html
-      // Greenhouse sends entity-encoded HTML — decode tag boundaries first so the
-      // regex can see actual < > characters, then strip.
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      // Strip all HTML tags
-      .replace(/<[^>]+>/g, ' ')
-      // Decode remaining entities
-      .replace(/&amp;/g, '&')
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
-      .replace(/&nbsp;/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-  );
-}
+import { stripHtml } from '../lib/html';
 
 function guessSeniority(title: string | null | undefined): SeniorityLevel {
   if (!title) return 'mid';

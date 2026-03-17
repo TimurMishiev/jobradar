@@ -1,17 +1,8 @@
 import { prisma } from '../lib/prisma';
 import { TARGET_COMPANIES } from '../companies';
+import { stripHtml } from '../lib/html';
 
 const FETCH_TIMEOUT_MS = 15_000;
-
-function stripHtml(html: string): string {
-  return html
-    .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&amp;/g, '&').replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'").replace(/&nbsp;/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
 
 interface WorkdayDetailResponse {
   jobPostingInfo?: {

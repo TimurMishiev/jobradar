@@ -74,9 +74,9 @@ export async function profileRoutes(app: FastifyInstance) {
       JSON.stringify(toStringArray(body.preferredCompanies).sort()) !== JSON.stringify([...existing.preferredCompanies].sort());
 
     if (scoringFieldsChanged) {
-      setImmediate(() => rescoreAllJobs().catch(() => {}));
+      setImmediate(() => rescoreAllJobs().catch((err) => console.error('[profile] rescoreAllJobs failed:', err instanceof Error ? err.message : String(err))));
     } else {
-      setImmediate(() => scoreUnscoredJobs().catch(() => {}));
+      setImmediate(() => scoreUnscoredJobs().catch((err) => console.error('[profile] scoreUnscoredJobs failed:', err instanceof Error ? err.message : String(err))));
     }
 
     return reply.code(200).send(profile);
