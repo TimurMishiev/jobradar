@@ -155,6 +155,9 @@ export async function jobRoutes(app: FastifyInstance) {
     const notes = rawNotes?.trim() || undefined;
     const user = await getOrCreateLocalUser();
 
+    const jobExists = await prisma.job.findUnique({ where: { id }, select: { id: true } });
+    if (!jobExists) return reply.code(404).send({ error: 'Job not found' });
+
     const result = await prisma.userJobAction.upsert({
       where: { userId_jobId: { userId: user.id, jobId: id } },
       create: { userId: user.id, jobId: id, action, notes },
