@@ -32,8 +32,11 @@ AI-assisted personal job intelligence platform. Aggregates job postings from 19 
 
 ### Job Tracking
 - **Daily digest** — Strong Matches (≥70), New Today, and Watchlist sections
-- **Job workflow** — Save, Apply, and Ignore per job with optional notes
-- **Tracker page** — tabbed Saved / Applied view with timestamps and inline notes
+- **Job workflow** — Save, Apply, and Ignore per job from any view
+- **Kanban tracker** — 5-stage pipeline: Saved → Applied → Interview → Offer → Rejected; click to advance or retreat between stages
+- **Inline notes** — per-job notes editable directly on the kanban card, saved on blur
+- **Stale nudge** — amber indicator when a job has been in Applied or Interview for ≥14 days
+- **CSV export** — one-click download of all tracked jobs with stage, score, and notes
 - **Score freshness** — "Scored X ago" shown on each job detail
 
 ### Profile & Settings
@@ -161,8 +164,9 @@ Scores are 0–100 with match reasons, missing signals, and a plain-English summ
 | ------ | --------------------------------- | ---------------------------------------------------------------------- |
 | GET    | /api/jobs                         | Paginated feed (filters: company, seniority, remoteType, location, title, postedWithin) |
 | GET    | /api/jobs/:id                     | Job detail with scores, actions, and opportunity signals               |
-| POST   | /api/jobs/:id/action              | Set action: SAVED / APPLIED / IGNORED                                  |
-| DELETE | /api/jobs/:id/action              | Remove action                                                          |
+| POST   | /api/jobs/:id/action              | Set stage: SAVED / APPLIED / INTERVIEW / OFFER / REJECTED / IGNORED   |
+| DELETE | /api/jobs/:id/action              | Remove action (returns job to untracked)                               |
+| PATCH  | /api/jobs/:id/notes               | Update notes on existing action without changing stage                 |
 | POST   | /api/jobs/:id/score               | Score a job against profile + default resume                           |
 | GET    | /api/digest                       | Daily digest: top scored, new today, watchlist (with opportunity signals) |
 | GET    | /api/insights/daily-briefing      | Latest AI daily briefing                                               |
@@ -192,6 +196,6 @@ Scores are 0–100 with match reasons, missing signals, and a plain-English summ
 - [x] v1.3: Smart re-scoring, score freshness, NL search, tracker page
 - [x] v1.4: Agent layer — Daily Briefing, Gap Analysis, resume skill extraction, priority badges, match signals on cards
 - [x] v1.5: Opportunity signals — watchlist, score improved, prior interaction, role open age
-- [ ] v1.6: Application tracking improvements (kanban board, stage notes, stale nudge, CSV export)
+- [x] v1.6: Kanban tracker — 5-stage pipeline, inline notes, stale nudge, CSV export
 - [ ] v1.7: Deployment prep (S3/R2 resume storage, Playwright for Meta/Google, Railway/Render config)
 - [ ] v1.8: Onboarding flow, setup guide, rate limiting, profile export/import

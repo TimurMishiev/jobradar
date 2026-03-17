@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueries, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '../lib/api';
 import type { JobFeedResponse, JobWithDetails, TrackerStage } from '../lib/types';
 import ScoreBadge from '../components/ScoreBadge';
@@ -202,18 +202,14 @@ function KanbanCard({ job, stage }: KanbanCardProps) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SavedPage() {
-  const queryKey = (stage: TrackerStage) => ['jobs', { action: stage }];
-  const queryUrl = (stage: TrackerStage) =>
-    `/api/jobs?action=${stage}&limit=200&postedWithin=all`;
-
-  const queries = STAGES.map((stage) =>
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useQuery({
-      queryKey: queryKey(stage),
-      queryFn: () => apiFetch<JobFeedResponse>(queryUrl(stage)),
+  const queries = useQueries({
+    queries: STAGES.map((stage) => ({
+      queryKey: ['jobs', { action: stage }],
+      queryFn: () =>
+        apiFetch<JobFeedResponse>(`/api/jobs?action=${stage}&limit=200&postedWithin=all`),
       staleTime: 60_000,
-    }),
-  );
+    })),
+  });
 
   const columns = STAGES.map((stage, i) => ({
     stage,

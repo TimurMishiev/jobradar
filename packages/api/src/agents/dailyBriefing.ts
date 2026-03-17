@@ -79,18 +79,29 @@ export async function runDailyBriefing(): Promise<BriefingInsight> {
     where: { isActive: true, postedAt: { gte: oneDayAgo } },
   });
 
-  // Watchlist: preferred companies with new roles this week
+  // Watchlist: preferred companies with new roles this week — one query, grouped client-side
   const watchlistData: WatchlistHighlight[] = [];
-  for (const company of preferredCompanies) {
-    const jobs = await prisma.job.findMany({
-      where: { company, isActive: true, postedAt: { gte: sevenDaysAgo } },
+  if (preferredCompanies.length > 0) {
+    const watchlistJobs = await prisma.job.findMany({
+      where: { company: { in: preferredCompanies }, isActive: true, postedAt: { gte: sevenDaysAgo } },
       include: { scores: { take: 1, orderBy: { score: 'desc' } } },
       orderBy: { postedAt: 'desc' },
-      take: 5,
     });
-    if (jobs.length > 0) {
-      const top = jobs.sort((a, b) => (b.scores[0]?.score ?? 0) - (a.scores[0]?.score ?? 0))[0];
-      watchlistData.push({ company, newRoles: jobs.length, topRole: top.title });
+
+    // Group by company
+    const byCompany = new Map<string, typeof watchlistJobs>();
+    for (const job of watchlistJobs) {
+      const list = byCompany.get(job.company) ?? [];
+      list.push(job);
+      byCompany.set(job.company, list);
+    }
+
+    for (const company of preferredCompanies) {
+      const jobs = byCompany.get(company);
+      if (jobs && jobs.length > 0) {
+        const top = jobs.slice().sort((a, b) => (b.scores[0]?.score ?? 0) - (a.scores[0]?.score ?? 0))[0];
+        watchlistData.push({ company, newRoles: jobs.length, topRole: top.title });
+      }
     }
   }
 

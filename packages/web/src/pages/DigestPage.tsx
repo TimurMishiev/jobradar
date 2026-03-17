@@ -49,7 +49,7 @@ function BriefingPanel() {
     queryFn: () =>
       apiFetch<BriefingInsightResponse>('/api/insights/daily-briefing').catch((err) => {
         // 404 means no briefing yet — return null rather than throw
-        if (err?.status === 404 || (err instanceof Error && err.message.includes('404'))) return null;
+        if (err instanceof ApiError && err.status === 404) return null;
         throw err;
       }),
     staleTime: 10 * 60_000,
@@ -172,7 +172,7 @@ function GapAnalysisPanel() {
     queryKey: ['gap-analysis'],
     queryFn: () =>
       apiFetch<GapAnalysisInsightResponse>('/api/insights/gap-analysis').catch((err) => {
-        if (err instanceof Error && err.message.includes('404')) return null;
+        if (err instanceof ApiError && err.status === 404) return null;
         throw err;
       }),
     staleTime: 30 * 60_000,
