@@ -17,13 +17,15 @@ interface WorkdayDetailResponse {
 export async function enrichWorkdayJob(jobId: string): Promise<void> {
   const job = await prisma.job.findUnique({
     where: { id: jobId },
-    select: { sourceType: true, externalJobId: true, url: true, descriptionNormalized: true, employmentType: true },
+    select: { sourceType: true, externalJobId: true, url: true, descriptionNormalized: true, employmentType: true, company: true },
   });
 
   if (!job || job.sourceType !== 'workday' || job.descriptionNormalized) return;
 
-  // Find the company config to get the Workday host/board
-  const company = TARGET_COMPANIES.find((c) => c.ats === 'workday');
+  // Find the company config matching this specific job's company name
+  const company = TARGET_COMPANIES.find(
+    (c) => c.ats === 'workday' && c.name.toLowerCase() === job.company.toLowerCase(),
+  );
   if (!company?.workdayHost || !company?.workdayBoard) return;
 
   // Extract the /job/... portion from the URL.
