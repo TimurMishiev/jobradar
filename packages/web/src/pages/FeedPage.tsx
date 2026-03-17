@@ -96,13 +96,20 @@ export default function FeedPage() {
         body: JSON.stringify({ query: q }),
       });
 
-      const next = new URLSearchParams({ postedWithin: '7', search: q });
-      if (parsed.title) next.set('title', parsed.title);
-      if (parsed.location) next.set('location', parsed.location);
-      if (parsed.company) next.set('company', parsed.company);
-      if (parsed.seniority) next.set('seniority', parsed.seniority);
-      if (parsed.remoteType) next.set('remoteType', parsed.remoteType);
-      setSearchParams(next);
+      const hasAnyFilter = parsed.title || parsed.location || parsed.company || parsed.seniority || parsed.remoteType;
+      if (!hasAnyFilter) {
+        // GPT extracted nothing — treat the raw query as a title keyword search
+        const next = new URLSearchParams({ postedWithin: '7', search: q, title: q });
+        setSearchParams(next);
+      } else {
+        const next = new URLSearchParams({ postedWithin: '7', search: q });
+        if (parsed.title) next.set('title', parsed.title);
+        if (parsed.location) next.set('location', parsed.location);
+        if (parsed.company) next.set('company', parsed.company);
+        if (parsed.seniority) next.set('seniority', parsed.seniority);
+        if (parsed.remoteType) next.set('remoteType', parsed.remoteType);
+        setSearchParams(next);
+      }
     } catch {
       // Fallback: treat the query as a title keyword search
       const next = new URLSearchParams(searchParams);
