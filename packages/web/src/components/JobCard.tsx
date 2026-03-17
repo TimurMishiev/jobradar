@@ -45,12 +45,23 @@ const SENIORITY_LABEL: Record<string, string> = {
   unknown: '',
 };
 
+function priorityTier(score: number): 'high' | 'medium' | null {
+  if (score >= 85) return 'high';
+  if (score >= 70) return 'medium';
+  return null;
+}
+
 export default function JobCard({ job }: Props) {
   const score = job.scores[0] ?? null;
   const remoteLabel = REMOTE_LABEL[job.remoteType ?? 'unknown'] ?? '';
   const seniorityLabel = SENIORITY_LABEL[job.seniorityGuess ?? 'unknown'] ?? '';
   const currentAction = job.userActions[0]?.action ?? null;
   const fresh = isNew(job.postedAt);
+  const tier = score ? priorityTier(score.score) : null;
+
+  const topReasons = score?.matchReasons?.slice(0, 2) ?? [];
+  const topGap = score?.missingSignals?.[0] ?? null;
+  const hasSignals = topReasons.length > 0 || topGap !== null;
 
   return (
     <article className={`job-card ${currentAction === 'IGNORED' ? 'job-card--ignored' : ''}`}>
@@ -68,6 +79,8 @@ export default function JobCard({ job }: Props) {
 
         {score && (
           <div className="job-card-right">
+            {tier === 'high' && <span className="priority-badge priority-badge--high">HIGH</span>}
+            {tier === 'medium' && <span className="priority-badge priority-badge--medium">MED</span>}
             <ScoreBadge score={score} />
           </div>
         )}
@@ -88,7 +101,24 @@ export default function JobCard({ job }: Props) {
         )}
       </div>
 
-      {job.tags.length > 0 && (
+      {hasSignals && (
+        <div className="card-signals">
+          {topReasons.map((reason, i) => (
+            <span key={i} className="card-signal card-signal--match">
+              <span className="card-signal-icon">✓</span>
+              {reason}
+            </span>
+          ))}
+          {topGap && (
+            <span className="card-signal card-signal--gap">
+              <span className="card-signal-icon">⚠</span>
+              {topGap}
+            </span>
+          )}
+        </div>
+      )}
+
+      {!hasSignals && job.tags.length > 0 && (
         <div className="job-tags">
           {[...new Set(job.tags)].slice(0, 5).map((tag) => (
             <span key={tag} className="job-tag">{tag}</span>

@@ -140,3 +140,20 @@ enum JobAction {
   IGNORED
   APPLIED
 }
+
+// ─── Agent Insights ───────────────────────────────────────────────────────────
+//
+// Persisted outputs from reasoning modules. Each agent writes one record per run.
+// The frontend reads the latest record for each type.
+//
+// type values: daily_briefing | gap_analysis | opportunity_signal
+//
+model AgentInsight {
+  id          String   @id @default(cuid())
+  type        String
+  generatedAt DateTime @default(now())
+  payload     Json
+
+  @@index([type])
+  @@index([generatedAt])
+}
