@@ -26,14 +26,16 @@ function buildPrompt(params: {
   description: string;
   targetTitles: string[];
   targetSkills: string[];
+  extractedSkills: string[];
   resumeText: string | null;
   isPreferredCompany: boolean;
 }): string {
-  const { jobTitle, company, description, targetTitles, targetSkills, resumeText, isPreferredCompany } = params;
+  const { jobTitle, company, description, targetTitles, targetSkills, extractedSkills, resumeText, isPreferredCompany } = params;
 
   const profileSection = [
     targetTitles.length > 0 ? `Target titles: ${targetTitles.join(', ')}` : null,
-    targetSkills.length > 0 ? `Target skills: ${targetSkills.join(', ')}` : null,
+    targetSkills.length > 0 ? `Target skills (user-specified): ${targetSkills.join(', ')}` : null,
+    extractedSkills.length > 0 ? `Skills detected from resume: ${extractedSkills.join(', ')}` : null,
     isPreferredCompany ? `Note: ${company} is a preferred company for this candidate.` : null,
     resumeText ? `\nResume:\n${resumeText.slice(0, 3000)}` : null,
   ]
@@ -102,6 +104,7 @@ export async function scoreJob(jobId: string): Promise<{
     description: job.descriptionNormalized ?? job.descriptionRaw ?? '',
     targetTitles: profile?.targetTitles ?? [],
     targetSkills: profile?.targetSkills ?? [],
+    extractedSkills: resume?.extractedSkills ?? [],
     resumeText: resume?.textContent ?? null,
     isPreferredCompany,
   });

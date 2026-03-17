@@ -80,6 +80,12 @@ export default function ProfilePage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['resumes'] }),
   });
 
+  const extractSkills = useMutation({
+    mutationFn: (id: string) =>
+      apiFetch<{ extractedSkills: string[] }>(`/api/resumes/${id}/extract-skills`, { method: 'POST' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['resumes'] }),
+  });
+
   const deleteResume = useMutation({
     mutationFn: (id: string) => apiFetch<void>(`/api/resumes/${id}`, { method: 'DELETE' }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['resumes'] }),
@@ -219,30 +225,50 @@ export default function ProfilePage() {
         {resumes.length > 0 && (
           <ul className="resume-list">
             {resumes.map((r) => (
-              <li key={r.id} className={`resume-item ${r.isDefault ? 'resume-item--default' : ''}`}>
-                <div className="resume-item-info">
-                  <span className="resume-item-name">{r.label}</span>
-                  <span className="resume-item-meta">{formatBytes(r.sizeBytes)}</span>
-                  {r.isDefault && <span className="resume-badge-default">Default</span>}
-                </div>
-                <div className="resume-item-actions">
-                  {!r.isDefault && (
+              <li key={r.id} className={`resume-item ${r.isDefault ? 'resume-item--default' : ''} ${r.extractedSkills.length > 0 ? 'resume-item--has-skills' : ''}`}>
+                <div className="resume-item-row">
+                  <div className="resume-item-info">
+                    <span className="resume-item-name">{r.label}</span>
+                    <span className="resume-item-meta">{formatBytes(r.sizeBytes)}</span>
+                    {r.isDefault && <span className="resume-badge-default">Default</span>}
+                  </div>
+                  <div className="resume-item-actions">
+                    {!r.isDefault && (
+                      <button
+                        className="resume-btn"
+                        onClick={() => setDefaultResume.mutate(r.id)}
+                        disabled={setDefaultResume.isPending}
+                      >
+                        Set default
+                      </button>
+                    )}
                     <button
                       className="resume-btn"
-                      onClick={() => setDefaultResume.mutate(r.id)}
-                      disabled={setDefaultResume.isPending}
+                      onClick={() => extractSkills.mutate(r.id)}
+                      disabled={extractSkills.isPending}
+                      title={r.extractedSkills.length > 0 ? 'Re-extract skills' : 'Extract skills from resume'}
                     >
-                      Set default
+                      {extractSkills.isPending ? '…' : r.extractedSkills.length > 0 ? 'Re-extract' : 'Extract skills'}
                     </button>
-                  )}
-                  <button
-                    className="resume-btn resume-btn--delete"
-                    onClick={() => deleteResume.mutate(r.id)}
-                    disabled={deleteResume.isPending}
-                  >
-                    Delete
-                  </button>
+                    <button
+                      className="resume-btn resume-btn--delete"
+                      onClick={() => deleteResume.mutate(r.id)}
+                      disabled={deleteResume.isPending}
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
+                {r.extractedSkills.length > 0 && (
+                  <div className="resume-skills">
+                    <span className="resume-skills-label">Detected skills</span>
+                    <div className="resume-skills-list">
+                      {r.extractedSkills.map((skill) => (
+                        <span key={skill} className="resume-skill-tag">{skill}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </li>
             ))}
           </ul>

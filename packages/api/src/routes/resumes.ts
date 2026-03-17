@@ -6,6 +6,7 @@ import * as path from 'path';
 import { randomUUID } from 'crypto';
 import pdfParse from 'pdf-parse';
 import { rescoreAllJobs } from '../services/scoring';
+import { extractSkillsFromResume } from '../services/resumeSkills';
 
 const UPLOADS_DIR = path.join(__dirname, '../../uploads/resumes');
 const MAX_LABEL_LENGTH = 100;
@@ -25,6 +26,7 @@ export async function resumeRoutes(app: FastifyInstance) {
         filename: true,
         mimeType: true,
         sizeBytes: true,
+        extractedSkills: true,
         isDefault: true,
         createdAt: true,
         updatedAt: true,
@@ -110,7 +112,38 @@ export async function resumeRoutes(app: FastifyInstance) {
       },
     });
 
+    // Extract skills in background — non-blocking, failure doesn't affect upload
+    setImmediate(() =>
+      extractSkillsFromResume(resume.id).catch((err) =>
+        console.error('[resumes] skill extraction failed:', err instanceof Error ? err.message : String(err)),
+      ),
+    );
+
     return reply.code(201).send(resume);
+  });
+
+  // POST /api/resumes/:id/extract-skills — re-extract skills on demand (for existing resumes)
+  app.post('/:id/extract-skills', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const user = await getLocalUser();
+    if (!user) return reply.code(404).send({ error: 'Resume not found' });
+
+    const existing = await prisma.resume.findUnique({
+      where: { id },
+      select: { userId: true, textContent: true },
+    });
+    if (!existing || existing.userId !== user.id) {
+      return reply.code(404).send({ error: 'Resume not found' });
+    }
+    if (!existing.textContent) {
+      return reply.code(422).send({ error: 'Resume has no extracted text content' });
+    }
+    if (!process.env.OPENAI_API_KEY) {
+      return reply.code(503).send({ error: 'OPENAI_API_KEY not configured' });
+    }
+
+    const skills = await extractSkillsFromResume(id, { force: true });
+    return { extractedSkills: skills };
   });
 
   // PATCH /api/resumes/:id/default — set a resume as the default

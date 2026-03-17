@@ -52,8 +52,9 @@ model Resume {
   storagePath String
   mimeType    String
   sizeBytes   Int
-  textContent String?  // extracted plain text, used for scoring
-  isDefault   Boolean  @default(false)
+  textContent     String?   // extracted plain text, used for scoring
+  extractedSkills String[]  // auto-extracted skills via GPT, populated after upload
+  isDefault       Boolean   @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

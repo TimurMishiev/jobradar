@@ -38,6 +38,7 @@ export interface Resume {
   filename: string;
   mimeType: string;
   sizeBytes: number;
+  extractedSkills: string[];
   isDefault: boolean;
   createdAt: string;
   updatedAt: string;

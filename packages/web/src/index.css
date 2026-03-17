@@ -1033,12 +1033,18 @@ input, select, textarea { font: inherit; }
 
 .resume-item {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  flex-direction: column;
   background: var(--bg-elevated);
   border: 1px solid var(--border-muted);
   border-radius: 8px;
+  overflow: hidden;
+}
+
+.resume-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   padding: 10px 14px;
 }
 
@@ -1100,6 +1106,37 @@ input, select, textarea { font: inherit; }
 .resume-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .resume-btn--delete:hover:not(:disabled) { color: var(--red); border-color: var(--red-border); }
+
+.resume-skills {
+  padding: 10px 14px 12px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.resume-skills-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-disabled);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.resume-skills-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.resume-skill-tag {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-muted);
+  color: var(--text-secondary);
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
 
 .resume-upload { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 
