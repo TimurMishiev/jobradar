@@ -73,6 +73,7 @@ export async function scoreJob(jobId: string): Promise<{
   jobId: string;
   resumeId: string | null;
   score: number;
+  previousScore: number | null;
   fitCategory: string | null;
   matchReasons: string[];
   missingSignals: string[];
@@ -143,8 +144,20 @@ export async function scoreJob(jobId: string): Promise<{
     : [];
   const summary = typeof output.summary === 'string' ? output.summary : null;
 
+  // Fetch existing score to capture previousScore before overwriting
+  const existingScore = resume
+    ? await prisma.jobScore.findFirst({
+        where: { jobId, resumeId: resume.id },
+        select: { id: true, score: true },
+      })
+    : await prisma.jobScore.findFirst({
+        where: { jobId, resumeId: null },
+        select: { id: true, score: true },
+      });
+
   const scoreData = {
     score,
+    previousScore: existingScore?.score ?? null, // null on first scoring; old score on rescore
     fitCategory,
     explanation: summary,           // keep legacy field in sync
     skillsMatch: Prisma.JsonNull,   // legacy field no longer populated
@@ -163,9 +176,8 @@ export async function scoreJob(jobId: string): Promise<{
       update: scoreData,
     });
   } else {
-    const existing = await prisma.jobScore.findFirst({ where: { jobId, resumeId: null } });
-    if (existing) {
-      result = await prisma.jobScore.update({ where: { id: existing.id }, data: scoreData });
+    if (existingScore) {
+      result = await prisma.jobScore.update({ where: { id: existingScore.id }, data: scoreData });
     } else {
       result = await prisma.jobScore.create({ data: { jobId, resumeId: null, ...scoreData } });
     }

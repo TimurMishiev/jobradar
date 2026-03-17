@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/prisma';
 import { getLocalUser } from '../lib/user';
+import { fetchSignalsContext, computeSignals } from '../lib/opportunitySignals';
 
 export async function digestRoutes(app: FastifyInstance) {
   // GET /api/digest
@@ -29,7 +30,7 @@ export async function digestRoutes(app: FastifyInstance) {
       },
     };
 
-    const [topScored, newToday, watchlist] = await Promise.all([
+    const [topScored, newToday, watchlist, signalsCtx] = await Promise.all([
       // Top scored: jobs with score >= 70 in the last 7 days
       prisma.job.findMany({
         where: {
@@ -66,16 +67,23 @@ export async function digestRoutes(app: FastifyInstance) {
             ...jobInclude,
           })
         : Promise.resolve([]),
+      user ? fetchSignalsContext(user.id) : Promise.resolve(null),
     ]);
 
     // Sort topScored by actual score descending (the DB orderBy above is approximate)
     topScored.sort((a, b) => (b.scores[0]?.score ?? 0) - (a.scores[0]?.score ?? 0));
 
+    const withSignals = (jobs: typeof topScored) =>
+      jobs.map((job) => ({
+        ...job,
+        opportunitySignals: signalsCtx ? computeSignals(job, signalsCtx) : [],
+      }));
+
     return {
       generatedAt: new Date().toISOString(),
-      topScored,
-      newToday,
-      watchlist,
+      topScored:  withSignals(topScored),
+      newToday:   withSignals(newToday),
+      watchlist:  withSignals(watchlist),
     };
   });
 }

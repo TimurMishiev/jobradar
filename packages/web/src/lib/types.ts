@@ -17,6 +17,7 @@ export interface JobScore {
   jobId: string;
   resumeId: string | null;
   score: number;
+  previousScore: number | null;
   fitCategory: 'high' | 'medium' | 'low' | null;
   summary: string | null;
   matchReasons: string[];
@@ -26,10 +27,22 @@ export interface JobScore {
   updatedAt: string;
 }
 
+export type OpportunitySignalKind =
+  | 'preferred_company'
+  | 'score_improved'
+  | 'prior_interaction'
+  | 'role_open';
+
+export interface OpportunitySignal {
+  kind: OpportunitySignalKind;
+  label: string;
+}
+
 // What the jobs list and detail endpoints actually return
 export interface JobWithDetails extends NormalizedJob {
   scores: JobScore[];
   userActions: UserJobAction[];
+  opportunitySignals: OpportunitySignal[];
 }
 
 export interface Resume {

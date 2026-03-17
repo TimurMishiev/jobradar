@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { getLocalUser, getOrCreateLocalUser } from '../lib/user';
 import { enrichWorkdayJob } from '../services/workdayEnrich';
+import { fetchSignalsContext, computeSignals } from '../lib/opportunitySignals';
 
 const VALID_ACTIONS = ['SAVED', 'IGNORED', 'APPLIED'] as const;
 type JobAction = (typeof VALID_ACTIONS)[number];
@@ -89,7 +90,7 @@ export async function jobRoutes(app: FastifyInstance) {
       };
     }
 
-    const [jobs, total] = await Promise.all([
+    const [jobs, total, signalsCtx] = await Promise.all([
       prisma.job.findMany({
         where,
         orderBy: { postedAt: 'desc' },
@@ -102,10 +103,16 @@ export async function jobRoutes(app: FastifyInstance) {
         },
       }),
       prisma.job.count({ where }),
+      user ? fetchSignalsContext(user.id) : Promise.resolve(null),
     ]);
 
+    const data = jobs.map((job) => ({
+      ...job,
+      opportunitySignals: signalsCtx ? computeSignals(job, signalsCtx) : [],
+    }));
+
     return {
-      data: jobs,
+      data,
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
     };
   });
@@ -116,29 +123,34 @@ export async function jobRoutes(app: FastifyInstance) {
     const user = await getLocalUser();
     const userId = user?.id ?? '__no_user__';
 
-    const job = await prisma.job.findUnique({
-      where: { id },
-      include: {
-        scores: { orderBy: { createdAt: 'desc' } },
-        userActions: { where: { userId } },
-      },
-    });
+    const [job, signalsCtx] = await Promise.all([
+      prisma.job.findUnique({
+        where: { id },
+        include: {
+          scores: { orderBy: { createdAt: 'desc' } },
+          userActions: { where: { userId } },
+        },
+      }),
+      user ? fetchSignalsContext(user.id) : Promise.resolve(null),
+    ]);
 
     if (!job) return reply.code(404).send({ error: 'Job not found' });
 
     // Lazily fetch and cache Workday job descriptions on first open
     if (job.sourceType === 'workday' && !job.descriptionNormalized) {
       await enrichWorkdayJob(id);
-      return prisma.job.findUnique({
+      const refreshed = await prisma.job.findUnique({
         where: { id },
         include: {
           scores: { orderBy: { createdAt: 'desc' } },
           userActions: { where: { userId } },
         },
       });
+      if (!refreshed) return reply.code(404).send({ error: 'Job not found' });
+      return { ...refreshed, opportunitySignals: signalsCtx ? computeSignals(refreshed, signalsCtx) : [] };
     }
 
-    return job;
+    return { ...job, opportunitySignals: signalsCtx ? computeSignals(job, signalsCtx) : [] };
   });
 
   // POST /api/jobs/:id/action

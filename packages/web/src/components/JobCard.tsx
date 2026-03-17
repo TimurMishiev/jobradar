@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import type { JobWithDetails } from '../lib/types';
+import type { JobWithDetails, OpportunitySignal, OpportunitySignalKind } from '../lib/types';
 import ScoreBadge from './ScoreBadge';
 import ActionButtons from './ActionButtons';
 
@@ -43,6 +43,13 @@ const SENIORITY_LABEL: Record<string, string> = {
   manager: 'Manager',
   director: 'Director',
   unknown: '',
+};
+
+const OPP_SIGNAL_ICON: Record<OpportunitySignalKind, string> = {
+  preferred_company: '★',
+  score_improved:    '↑',
+  prior_interaction: '↩',
+  role_open:         '⏱',
 };
 
 function priorityTier(score: number): 'high' | 'medium' | null {
@@ -122,6 +129,17 @@ export default function JobCard({ job }: Props) {
         <div className="job-tags">
           {[...new Set(job.tags)].slice(0, 5).map((tag) => (
             <span key={tag} className="job-tag">{tag}</span>
+          ))}
+        </div>
+      )}
+
+      {(job.opportunitySignals ?? []).length > 0 && (
+        <div className="opp-signals">
+          {(job.opportunitySignals ?? []).slice(0, 3).map((sig: OpportunitySignal) => (
+            <span key={sig.kind} className={`opp-signal opp-signal--${sig.kind}`}>
+              <span className="opp-signal-icon">{OPP_SIGNAL_ICON[sig.kind]}</span>
+              {sig.label}
+            </span>
           ))}
         </div>
       )}

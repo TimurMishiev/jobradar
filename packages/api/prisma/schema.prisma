@@ -106,6 +106,7 @@ model JobScore {
   resumeId       String?
   resume         Resume?  @relation(fields: [resumeId], references: [id], onDelete: SetNull)
   score          Int      // 0–100
+  previousScore  Int?     // score before the most recent rescore — null on first scoring
   fitCategory    String?  // high | medium | low
   explanation    String?
   skillsMatch    Json?    // legacy: { matched: string[], missing: string[], bonus: string[] }

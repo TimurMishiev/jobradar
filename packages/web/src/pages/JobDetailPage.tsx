@@ -2,10 +2,17 @@ import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '../lib/api';
-import type { JobWithDetails } from '../lib/types';
+import type { JobWithDetails, OpportunitySignal, OpportunitySignalKind } from '../lib/types';
 import ActionButtons from '../components/ActionButtons';
 import ScoreBadge from '../components/ScoreBadge';
 import { useScoreJob } from '../hooks/useScoreJob';
+
+const OPP_SIGNAL_ICON: Record<OpportunitySignalKind, string> = {
+  preferred_company: '★',
+  score_improved:    '↑',
+  prior_interaction: '↩',
+  role_open:         '⏱',
+};
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -101,6 +108,17 @@ export default function JobDetailPage() {
               ))}
             </ul>
           )}
+        </div>
+      )}
+
+      {(job.opportunitySignals ?? []).length > 0 && (
+        <div className="opp-signals opp-signals--detail">
+          {job.opportunitySignals.map((sig: OpportunitySignal) => (
+            <span key={sig.kind} className={`opp-signal opp-signal--${sig.kind}`}>
+              <span className="opp-signal-icon">{OPP_SIGNAL_ICON[sig.kind]}</span>
+              {sig.label}
+            </span>
+          ))}
         </div>
       )}
 
