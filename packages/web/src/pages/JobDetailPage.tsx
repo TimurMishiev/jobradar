@@ -71,6 +71,12 @@ export default function JobDetailPage() {
         <ScoreBadge score={score} isScoring={isScoring} />
       </div>
 
+      {isScoring && !score && (
+        <div className="score-explanation score-explanation--analyzing">
+          <p className="score-analyzing-msg">Analyzing match — this takes a few seconds…</p>
+        </div>
+      )}
+
       {score && (score.summary || score.matchReasons.length > 0) && (
         <div className="score-explanation">
           {score.summary && (

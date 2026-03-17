@@ -726,6 +726,18 @@ input, select, textarea { font: inherit; }
   color: var(--text-secondary);
 }
 
+.score-explanation--analyzing {
+  border-style: dashed;
+  opacity: 0.7;
+}
+
+.score-analyzing-msg {
+  font-size: 13px;
+  color: var(--text-disabled);
+  font-style: italic;
+  margin: 0;
+}
+
 .score-explanation-label {
   font-size: 10px;
   font-weight: 600;

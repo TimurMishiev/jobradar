@@ -3,7 +3,6 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { getLocalUser, getOrCreateLocalUser } from '../lib/user';
 import { enrichWorkdayJob } from '../services/workdayEnrich';
-import { scoreJob } from '../services/scoring';
 
 const VALID_ACTIONS = ['SAVED', 'IGNORED', 'APPLIED'] as const;
 type JobAction = (typeof VALID_ACTIONS)[number];
@@ -130,8 +129,6 @@ export async function jobRoutes(app: FastifyInstance) {
     // Lazily fetch and cache Workday job descriptions on first open
     if (job.sourceType === 'workday' && !job.descriptionNormalized) {
       await enrichWorkdayJob(id);
-      // Score in background now that we have a description
-      setImmediate(() => scoreJob(id).catch((err) => console.error(`[jobs] post-enrich score failed ${id}:`, err instanceof Error ? err.message : String(err))));
       return prisma.job.findUnique({
         where: { id },
         include: {
