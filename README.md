@@ -1,6 +1,6 @@
 # JobRadar
 
-AI-assisted personal job intelligence platform. Aggregates job postings from 11 companies across multiple ATS providers, scores each job against your resume and profile using GPT-4o-mini, and surfaces a personalized feed with save/apply/ignore tracking.
+AI-assisted personal job intelligence platform. Aggregates job postings from 19 companies across multiple ATS providers, scores each job against your resume and profile using GPT-4o-mini, and surfaces a personalized feed with save/apply/ignore tracking.
 
 ## Features
 
@@ -8,13 +8,15 @@ AI-assisted personal job intelligence platform. Aggregates job postings from 11 
 - **Scheduled ingestion** — runs every 4 hours automatically via node-cron
 - **AI job scoring** — GPT-4o-mini scores each job 0–100 against your profile and resume, with match reasons and missing signals
 - **Resume-aware scoring** — upload a PDF resume; extracted text is included in every scoring prompt
-- **Preferred company boost** — jobs from your watchlist companies get a score boost
-- **Natural language search** — type "senior frontend engineer remote defense tech" and filters auto-populate
+- **Preferred company boost** — jobs from your watchlist companies get a +5 score boost
+- **Smart re-scoring** — profile or resume changes automatically trigger background rescoring
+- **Natural language search** — type "senior ML engineer remote" and filters auto-populate via GPT
 - **Structured filters** — company, seniority, remote type, location, role/title, posted within
+- **Daily digest** — Strong Matches (score ≥ 70), New Today, and Watchlist sections
 - **Job workflow** — Save, Apply, and Ignore per job with optional notes
 - **Tracker page** — tabbed Saved / Applied view with timestamps and inline notes
-- **Daily digest** — `GET /api/digest` returns top scored jobs, new today, and watchlist activity
-- **Workday lazy enrichment** — descriptions fetched and cached on first job open
+- **Workday enrichment** — descriptions fetched lazily on first open and bulk-enriched in background after every ingestion
+- **Score freshness** — shows "Scored X ago" on each job detail
 - **User profile** — target titles, skills, preferred companies, locations, remote preference, seniority levels
 - **Dark/light theme** — persisted to localStorage
 - **Single-user, local-first** — no auth required, runs entirely on your machine
@@ -29,21 +31,29 @@ AI-assisted personal job intelligence platform. Aggregates job postings from 11 
 | AI       | OpenAI gpt-4o-mini                      |
 | Monorepo | pnpm workspaces                         |
 
-## Supported Companies
+## Supported Companies (19)
 
-| Company           | ATS       |
-| ----------------- | --------- |
-| Anthropic         | Greenhouse |
-| Anduril           | Greenhouse |
-| OpenAI            | Ashby     |
-| Perplexity        | Ashby     |
-| Rune Technologies | Ashby     |
-| Palantir          | Lever     |
-| Shield AI         | Lever     |
-| Reveal Technology | Lever     |
-| Accenture         | Workday   |
-| Meta              | Custom (stub — needs Playwright) |
-| Google            | Custom (stub — needs Playwright) |
+| Company               | ATS        |
+| --------------------- | ---------- |
+| Anthropic             | Greenhouse |
+| Anduril               | Greenhouse |
+| Applied Intuition     | Greenhouse |
+| Epirus                | Greenhouse |
+| Rebellion Defense     | Greenhouse |
+| Saildrone             | Greenhouse |
+| Vannevar Labs         | Greenhouse |
+| OpenAI                | Ashby      |
+| Perplexity            | Ashby      |
+| Rune Technologies     | Ashby      |
+| Skydio                | Ashby      |
+| Palantir              | Lever      |
+| Shield AI             | Lever      |
+| Reveal Technology     | Lever      |
+| Accenture             | Workday    |
+| Booz Allen Hamilton   | Workday    |
+| Leidos                | Workday    |
+| Meta                  | Custom (stub — needs Playwright) |
+| Google                | Custom (stub — needs Playwright) |
 
 ## Project Structure
 
@@ -98,42 +108,42 @@ curl -X POST http://localhost:3000/api/ingest
 # Ingest specific companies by slug
 curl -X POST http://localhost:3000/api/ingest \
   -H "Content-Type: application/json" \
-  -d '{"companies": ["anthropic", "anduril", "openai"]}'
+  -d '{"companies": ["anthropic", "openai", "leidos"]}'
 ```
 
-Ingestion also runs automatically every 4 hours. Override the schedule with `INGEST_CRON` in `.env`.
+Ingestion also runs automatically every 4 hours. After each run, Workday job descriptions are bulk-enriched in the background (100 most recent first), then scored.
 
 ### AI Scoring
 
 Add `OPENAI_API_KEY` to `packages/api/.env`, then:
 
-- **Save your profile** — triggers background scoring for all unscored jobs with descriptions
-- **Open any job** — auto-scores on first view if no score exists
-- **Set a default resume** — triggers a rescore pass with your resume included in the prompt
+- **Save your profile** — triggers background scoring for all unscored jobs
+- **Upload a resume** — text is extracted and included in every scoring prompt
+- **Set a default resume** — triggers a full rescore pass with the new resume
+- **Open any job** — auto-scores on first view if no score exists yet
 - **Score manually** — `POST /api/jobs/:id/score`
 
-Scores are 0–100. Jobs from your preferred companies receive a +5 boost.
+Scores are 0–100 with match reasons, missing signals, and a plain-English summary. Jobs from preferred companies receive a +5 boost.
 
 ## API Routes
 
-| Method | Path                        | Description                                    |
-| ------ | --------------------------- | ---------------------------------------------- |
+| Method | Path                        | Description                                                     |
+| ------ | --------------------------- | --------------------------------------------------------------- |
 | GET    | /api/jobs                   | Paginated feed (filters: company, seniority, remoteType, location, title, postedWithin) |
-| GET    | /api/jobs/:id               | Job detail with full description               |
-| POST   | /api/jobs/:id/action        | Set action: SAVED / APPLIED / IGNORED          |
-| DELETE | /api/jobs/:id/action        | Remove action                                  |
-| PUT    | /api/jobs/:id/notes         | Update notes on a job                          |
-| POST   | /api/jobs/:id/score         | Score a job against profile + default resume   |
-| GET    | /api/digest                 | Daily digest: top scored, new today, watchlist |
-| GET    | /api/profile                | Get user profile                               |
-| PUT    | /api/profile                | Update profile (triggers background scoring)   |
-| GET    | /api/resumes                | List uploaded resumes                          |
-| POST   | /api/resumes                | Upload a PDF resume (multipart)                |
-| PATCH  | /api/resumes/:id/default    | Set default resume (triggers background scoring) |
-| DELETE | /api/resumes/:id            | Delete a resume                                |
-| POST   | /api/ingest                 | Trigger ingestion (all or filtered by slug)    |
-| GET    | /api/ingest/companies       | List configured companies                      |
-| POST   | /api/search/parse           | Parse NL query into structured filters         |
+| GET    | /api/jobs/:id               | Job detail with scores and user actions                         |
+| POST   | /api/jobs/:id/action        | Set action: SAVED / APPLIED / IGNORED                          |
+| DELETE | /api/jobs/:id/action        | Remove action                                                   |
+| POST   | /api/jobs/:id/score         | Score a job against profile + default resume                    |
+| GET    | /api/digest                 | Daily digest: top scored, new today, watchlist                  |
+| GET    | /api/profile                | Get user profile                                                |
+| PUT    | /api/profile                | Update profile (triggers background scoring)                    |
+| GET    | /api/resumes                | List uploaded resumes                                           |
+| POST   | /api/resumes                | Upload a PDF resume (multipart/form-data)                       |
+| PATCH  | /api/resumes/:id/default    | Set default resume (triggers full rescore)                      |
+| DELETE | /api/resumes/:id            | Delete a resume                                                 |
+| POST   | /api/ingest                 | Trigger ingestion (all companies or filtered by slug)           |
+| GET    | /api/ingest/companies       | List all configured companies                                   |
+| POST   | /api/search/parse           | Parse a natural language query into structured filters          |
 
 ## Roadmap
 
@@ -142,7 +152,8 @@ Scores are 0–100. Jobs from your preferred companies receive a +5 boost.
 - [x] Phase 3: React frontend — feed, filters, job workflow, dark/light theme
 - [x] Phase 4: AI scoring with GPT-4o-mini, resume upload, profile preferences
 - [x] Phase 5: Scheduled ingestion (node-cron, every 4h)
-- [x] Phase 6: 9 additional companies, Workday lazy description enrichment
-- [x] v1.1: Resume-aware scoring, structured match explanations, digest endpoint, score triggers
+- [x] Phase 6: 17 companies across 4 ATS providers, Workday description enrichment
+- [x] v1.1: Resume-aware scoring, structured match explanations, digest page, score triggers
+- [x] v1.3: Smart re-scoring, score freshness, bulk Workday enrichment
 - [ ] Playwright connectors for Meta and Google
 - [ ] Deployment (Railway / Render)
