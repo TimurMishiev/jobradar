@@ -1,6 +1,8 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import multipart from '@fastify/multipart';
+import staticPlugin from '@fastify/static';
+import path from 'path';
 import { registerRoutes } from './routes';
 
 export async function buildServer() {
@@ -40,6 +42,25 @@ export async function buildServer() {
   }));
 
   await registerRoutes(app);
+
+  // Production: serve the web SPA static build.
+  // Set WEB_DIST_PATH to the absolute path of packages/web/dist in the container.
+  // In dev this is unset — Vite dev server handles the web.
+  const webDistPath = process.env.WEB_DIST_PATH
+    ? path.resolve(process.env.WEB_DIST_PATH)
+    : null;
+
+  if (webDistPath) {
+    await app.register(staticPlugin, { root: webDistPath, wildcard: false });
+
+    // SPA catch-all: serve index.html for all non-API paths
+    app.setNotFoundHandler(async (request, reply) => {
+      if (request.url.startsWith('/api') || request.url.startsWith('/health')) {
+        return reply.code(404).send({ error: 'Not found' });
+      }
+      return reply.sendFile('index.html', webDistPath);
+    });
+  }
 
   return app;
 }

@@ -1,0 +1,26 @@
+node_modules
+**/node_modules
+**/.pnpm-store
+
+# Build outputs (rebuilt inside Docker)
+packages/api/dist
+packages/web/dist
+packages/shared/dist
+
+# Local env files — use platform env vars in production
+**/.env
+**/.env.*
+!**/.env.example
+
+# Dev tooling
+**/.git
+**/.gitignore
+**/README.md
+**/CHANGELOG.md
+
+# Uploads (runtime volume or S3 in production)
+packages/api/uploads
+
+# Editor artifacts
+**/.DS_Store
+**/*.log
