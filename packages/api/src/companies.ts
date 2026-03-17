@@ -28,6 +28,36 @@ export const TARGET_COMPANIES: CompanyConfig[] = [
     ats: 'greenhouse',
     boardToken: 'andurilindustries',
   },
+  {
+    name: 'Applied Intuition',
+    slug: 'applied-intuition',
+    ats: 'greenhouse',
+    boardToken: 'appliedintuition',
+  },
+  {
+    name: 'Epirus',
+    slug: 'epirus',
+    ats: 'greenhouse',
+    boardToken: 'epirus',
+  },
+  {
+    name: 'Rebellion Defense',
+    slug: 'rebellion-defense',
+    ats: 'greenhouse',
+    boardToken: 'rebelliondefense',
+  },
+  {
+    name: 'Saildrone',
+    slug: 'saildrone',
+    ats: 'greenhouse',
+    boardToken: 'saildroneinc',
+  },
+  {
+    name: 'Vannevar Labs',
+    slug: 'vannevar',
+    ats: 'greenhouse',
+    boardToken: 'vannevarlabs',
+  },
 
   // Ashby
   {
@@ -35,6 +65,12 @@ export const TARGET_COMPANIES: CompanyConfig[] = [
     slug: 'openai',
     ats: 'ashby',
     boardToken: 'openai',
+  },
+  {
+    name: 'Skydio',
+    slug: 'skydio',
+    ats: 'ashby',
+    boardToken: 'skydio',
   },
   {
     name: 'Perplexity',
@@ -77,6 +113,22 @@ export const TARGET_COMPANIES: CompanyConfig[] = [
     boardToken: 'accenture',
     workdayHost: 'accenture.wd103.myworkdayjobs.com',
     workdayBoard: 'AccentureCareers',
+  },
+  {
+    name: 'Booz Allen Hamilton',
+    slug: 'booz-allen',
+    ats: 'workday',
+    boardToken: 'bah',
+    workdayHost: 'bah.wd1.myworkdayjobs.com',
+    workdayBoard: 'BAH_Jobs',
+  },
+  {
+    name: 'Leidos',
+    slug: 'leidos',
+    ats: 'workday',
+    boardToken: 'leidos',
+    workdayHost: 'leidos.wd5.myworkdayjobs.com',
+    workdayBoard: 'External',
   },
 
   // Custom scrapers
