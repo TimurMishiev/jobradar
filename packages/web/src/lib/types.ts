@@ -121,3 +121,40 @@ export interface JobFeedResponse {
     pages: number;
   };
 }
+
+// ─── Company Signals ──────────────────────────────────────────────────────────
+
+export type CompanySignalKind = 'HIRING_CLUSTER' | 'SKILL_MATCH_CLUSTER';
+
+export interface CompanySignal {
+  company: string;
+  kind: CompanySignalKind;
+  description: string;
+  roleCount: number;
+  topRole: string | null;
+}
+
+export interface CompanySignalsPayload {
+  signals: CompanySignal[];
+  generatedAt: string;
+  basedOnDays: number;
+}
+
+export interface CompanySignalsInsightResponse {
+  id: string;
+  generatedAt: string;
+  payload: CompanySignalsPayload;
+}
+
+// ─── Insight Timeline ─────────────────────────────────────────────────────────
+
+export interface TimelineEntry {
+  id: string;
+  type: string;
+  generatedAt: string;
+  payload: unknown;
+}
+
+export interface InsightTimelineResponse {
+  data: TimelineEntry[];
+}

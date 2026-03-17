@@ -2,7 +2,18 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch, ApiError } from '../lib/api';
-import type { DigestResponse, JobWithDetails, BriefingInsightResponse, GapAnalysisInsightResponse } from '../lib/types';
+import type {
+  DigestResponse,
+  JobWithDetails,
+  BriefingInsightResponse,
+  GapAnalysisInsightResponse,
+  CompanySignalsInsightResponse,
+  CompanySignal,
+  InsightTimelineResponse,
+  DailyBriefingPayload,
+  GapAnalysisPayload,
+  CompanySignalsPayload,
+} from '../lib/types';
 import JobCard from '../components/JobCard';
 
 function timeAgo(iso: string): string {
@@ -267,6 +278,191 @@ function GapAnalysisPanel() {
   );
 }
 
+const SIGNAL_ICON: Record<string, string> = {
+  HIRING_CLUSTER:     '📈',
+  SKILL_MATCH_CLUSTER: '🎯',
+};
+
+function CompanySignalsPanel() {
+  const queryClient = useQueryClient();
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['company-signals'],
+    queryFn: () =>
+      apiFetch<CompanySignalsInsightResponse>('/api/insights/company-signals').catch((err) => {
+        if (err instanceof ApiError && err.status === 404) return null;
+        throw err;
+      }),
+    staleTime: 10 * 60_000,
+    retry: false,
+  });
+
+  const generate = useMutation({
+    mutationFn: () =>
+      apiFetch<CompanySignalsInsightResponse>('/api/insights/company-signals', { method: 'POST' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['company-signals'] }),
+  });
+
+  if (isLoading) return null;
+  if (isError) return null;
+
+  if (!data) {
+    return (
+      <div className="company-signals-panel company-signals-panel--empty">
+        <div className="company-signals-empty-text">
+          <span className="company-signals-label">Company Intelligence</span>
+          <p>Detect hiring clusters and skill-match patterns across companies.</p>
+        </div>
+        <button
+          className="briefing-generate-btn"
+          onClick={() => generate.mutate()}
+          disabled={generate.isPending}
+        >
+          {generate.isPending ? 'Analyzing…' : 'Run Analysis'}
+        </button>
+        {generate.isError && (
+          <p className="briefing-error">
+            {generate.error instanceof ApiError && generate.error.status === 429
+              ? generate.error.message
+              : 'Failed to run analysis.'}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  const { payload, generatedAt } = data;
+  const signals: CompanySignal[] = payload.signals ?? [];
+
+  return (
+    <div className="company-signals-panel">
+      <div className="briefing-header">
+        <span className="company-signals-label">Company Intelligence</span>
+        <div className="briefing-header-right">
+          <span className="briefing-age">
+            {signals.length} signal{signals.length !== 1 ? 's' : ''} · Generated {timeAgo(generatedAt)}
+          </span>
+          <button
+            className="briefing-refresh-btn"
+            onClick={() => generate.mutate()}
+            disabled={generate.isPending}
+          >
+            {generate.isPending ? 'Analyzing…' : 'Refresh'}
+          </button>
+        </div>
+      </div>
+
+      {generate.isError && (
+        <p className="briefing-error">
+          {generate.error instanceof ApiError && generate.error.status === 429
+            ? generate.error.message
+            : 'Failed to refresh.'}
+        </p>
+      )}
+
+      {signals.length === 0 ? (
+        <p className="digest-empty">No notable patterns detected this week.</p>
+      ) : (
+        <div className="company-signal-list">
+          {signals.map((s, i) => (
+            <div key={`${s.company}-${s.kind}-${i}`} className={`company-signal-item company-signal-item--${s.kind.toLowerCase()}`}>
+              <span className="company-signal-icon">{SIGNAL_ICON[s.kind] ?? '•'}</span>
+              <div className="company-signal-body">
+                <span className="company-signal-desc">{s.description}</span>
+                {s.topRole && (
+                  <span className="company-signal-top">Top role: {s.topRole}</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Timeline helpers ─────────────────────────────────────────────────────────
+
+const TIMELINE_TYPE_LABEL: Record<string, string> = {
+  daily_briefing:  'Daily Briefing',
+  gap_analysis:    'Gap Analysis',
+  company_signals: 'Company Intelligence',
+};
+
+function timelineEntryDescription(type: string, payload: unknown): string {
+  try {
+    if (type === 'daily_briefing') {
+      const p = payload as DailyBriefingPayload;
+      return p.headline ?? 'Briefing generated';
+    }
+    if (type === 'gap_analysis') {
+      const p = payload as GapAnalysisPayload;
+      return p.summary ? p.summary.slice(0, 120) : 'Gap analysis completed';
+    }
+    if (type === 'company_signals') {
+      const p = payload as CompanySignalsPayload;
+      const count = p.signals?.length ?? 0;
+      return count > 0
+        ? `${count} signal${count !== 1 ? 's' : ''} detected — ${p.signals[0].description}`
+        : 'No notable patterns detected';
+    }
+  } catch {
+    // fall through
+  }
+  return 'Insight generated';
+}
+
+function InsightTimeline() {
+  const { data, isLoading } = useQuery({
+    queryKey: ['insight-timeline'],
+    queryFn: () => apiFetch<InsightTimelineResponse>('/api/insights?limit=15'),
+    staleTime: 5 * 60_000,
+  });
+
+  if (isLoading) return null;
+  const entries = data?.data ?? [];
+  if (entries.length === 0) return null;
+
+  // Group by date
+  const grouped = new Map<string, typeof entries>();
+  for (const entry of entries) {
+    const day = new Date(entry.generatedAt).toLocaleDateString('en-US', {
+      weekday: 'long', month: 'short', day: 'numeric',
+    });
+    const list = grouped.get(day) ?? [];
+    list.push(entry);
+    grouped.set(day, list);
+  }
+
+  return (
+    <section className="insight-timeline">
+      <div className="digest-section-header">
+        <h2 className="digest-section-title">Recent Activity</h2>
+        <span className="digest-section-subtitle">Intelligence history</span>
+      </div>
+      <div className="timeline-groups">
+        {[...grouped.entries()].map(([day, dayEntries]) => (
+          <div key={day} className="timeline-group">
+            <span className="timeline-day">{day}</span>
+            <div className="timeline-entries">
+              {dayEntries.map((entry) => (
+                <div key={entry.id} className="timeline-entry">
+                  <span className="timeline-entry-type">
+                    {TIMELINE_TYPE_LABEL[entry.type] ?? entry.type}
+                  </span>
+                  <span className="timeline-entry-desc">
+                    {timelineEntryDescription(entry.type, entry.payload)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export default function DigestPage() {
   const { data, isLoading, isError, dataUpdatedAt } = useQuery({
     queryKey: ['digest'],
@@ -291,6 +487,7 @@ export default function DigestPage() {
 
       <BriefingPanel />
       <GapAnalysisPanel />
+      <CompanySignalsPanel />
 
       {data.topScored.length > 0 && (
         <DigestSection
@@ -314,6 +511,8 @@ export default function DigestPage() {
         jobs={data.watchlist}
         emptyMessage="No recent jobs from your preferred companies. Add companies in your profile."
       />
+
+      <InsightTimeline />
     </div>
   );
 }

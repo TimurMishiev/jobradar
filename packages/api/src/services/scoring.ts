@@ -1,7 +1,11 @@
 import OpenAI from 'openai';
-import { Prisma } from '@prisma/client';
+import { Prisma, ScoreTrigger } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { getLocalUser } from '../lib/user';
+
+export { ScoreTrigger };
+
+const SCORE_HISTORY_CAP = 10;
 
 const MODEL = 'gpt-4o-mini';
 const OPENAI_TIMEOUT_MS = 30_000;
@@ -68,7 +72,7 @@ Guidelines:
 - summary must be concrete and actionable, not vague`;
 }
 
-export async function scoreJob(jobId: string): Promise<{
+export async function scoreJob(jobId: string, trigger: ScoreTrigger = ScoreTrigger.INITIAL): Promise<{
   id: string;
   jobId: string;
   resumeId: string | null;
@@ -183,6 +187,28 @@ export async function scoreJob(jobId: string): Promise<{
     }
   }
 
+  // Write score history entry; prune oldest if over cap
+  const reasonSummary =
+    trigger === ScoreTrigger.PROFILE_CHANGE ? 'Profile updated' :
+    trigger === ScoreTrigger.RESUME_CHANGE  ? 'Resume changed' :
+    trigger === ScoreTrigger.MANUAL         ? 'Manual rescore' :
+    'Initial scoring';
+
+  await prisma.scoreHistory.create({
+    data: { jobId, userId: user.id, score, trigger, reasonSummary },
+  });
+
+  const historyCount = await prisma.scoreHistory.count({ where: { jobId } });
+  if (historyCount > SCORE_HISTORY_CAP) {
+    const oldest = await prisma.scoreHistory.findMany({
+      where: { jobId },
+      orderBy: { createdAt: 'asc' },
+      take: historyCount - SCORE_HISTORY_CAP,
+      select: { id: true },
+    });
+    await prisma.scoreHistory.deleteMany({ where: { id: { in: oldest.map((e) => e.id) } } });
+  }
+
   return result;
 }
 
@@ -213,7 +239,7 @@ export async function scoreUnscoredJobs(): Promise<void> {
 
 // Rescore ALL jobs with descriptions — used when profile or resume changes significantly.
 // Scores most recent jobs first; no cap.
-export async function rescoreAllJobs(): Promise<void> {
+export async function rescoreAllJobs(trigger: ScoreTrigger = ScoreTrigger.PROFILE_CHANGE): Promise<void> {
   if (!process.env.OPENAI_API_KEY) return;
 
   const jobs = await prisma.job.findMany({
@@ -227,7 +253,7 @@ export async function rescoreAllJobs(): Promise<void> {
 
   for (const job of jobs) {
     try {
-      await scoreJob(job.id);
+      await scoreJob(job.id, trigger);
     } catch (err) {
       console.error(`[scoring] rescoreAllJobs: failed job ${job.id}:`, err instanceof Error ? err.message : String(err));
     }

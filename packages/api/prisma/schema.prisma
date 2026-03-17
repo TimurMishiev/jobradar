@@ -85,8 +85,9 @@ model Job {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
-  scores      JobScore[]
-  userActions UserJobAction[]
+  scores       JobScore[]
+  userActions  UserJobAction[]
+  scoreHistory ScoreHistory[]
 
   // Dedup: for structured sources (Greenhouse/Lever), (sourceType, company, externalJobId) is unique.
   // URL-based dedup is handled in ingestion code for sources without stable IDs.
@@ -146,12 +147,38 @@ enum JobAction {
   REJECTED
 }
 
+// ─── Score History ────────────────────────────────────────────────────────────
+//
+// Lightweight audit trail of score changes per job. Written on every scoreJob call.
+// Capped at 10 entries per job (oldest pruned automatically).
+//
+model ScoreHistory {
+  id            String       @id @default(cuid())
+  jobId         String
+  job           Job          @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  userId        String
+  score         Int
+  trigger       ScoreTrigger
+  reasonSummary String?
+  createdAt     DateTime     @default(now())
+
+  @@index([jobId])
+  @@index([userId, createdAt])
+}
+
+enum ScoreTrigger {
+  INITIAL
+  PROFILE_CHANGE
+  RESUME_CHANGE
+  MANUAL
+}
+
 // ─── Agent Insights ───────────────────────────────────────────────────────────
 //
 // Persisted outputs from reasoning modules. Each agent writes one record per run.
 // The frontend reads the latest record for each type.
 //
-// type values: daily_briefing | gap_analysis | opportunity_signal
+// type values: daily_briefing | gap_analysis | company_signals
 //
 model AgentInsight {
   id          String   @id @default(cuid())

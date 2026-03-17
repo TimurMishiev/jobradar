@@ -5,7 +5,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { randomUUID } from 'crypto';
 import pdfParse from 'pdf-parse';
-import { rescoreAllJobs } from '../services/scoring';
+import { rescoreAllJobs, ScoreTrigger } from '../services/scoring';
 import { extractSkillsFromResume } from '../services/resumeSkills';
 
 const UPLOADS_DIR = path.join(__dirname, '../../uploads/resumes');
@@ -174,7 +174,7 @@ export async function resumeRoutes(app: FastifyInstance) {
     });
 
     // New default resume — rescore ALL jobs so scores reflect the new resume
-    setImmediate(() => rescoreAllJobs().catch((err) => console.error('[resumes] rescoreAllJobs failed:', err instanceof Error ? err.message : String(err))));
+    setImmediate(() => rescoreAllJobs(ScoreTrigger.RESUME_CHANGE).catch((err) => console.error('[resumes] rescoreAllJobs failed:', err instanceof Error ? err.message : String(err))));
 
     return updated;
   });

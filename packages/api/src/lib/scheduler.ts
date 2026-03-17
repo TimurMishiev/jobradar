@@ -1,6 +1,7 @@
 import cron from 'node-cron';
 import { runIngestion } from '../services/ingestion';
 import { runDailyBriefing } from '../agents/dailyBriefing';
+import { runCompanySignals } from '../agents/companySignal';
 
 // Default: every 4 hours. Override with INGEST_CRON env var.
 // '0 */4 * * *' = at minute 0 of every 4th hour
@@ -37,6 +38,11 @@ export function startScheduler(): void {
             process.stderr.write(`[scheduler] Error for ${r.company}: ${r.error}\n`);
           }
         }
+
+        // Run company signal detection after every ingestion (no GPT, fast)
+        runCompanySignals().catch((err) =>
+          process.stderr.write(`[scheduler] Company signals failed: ${(err as Error).message}\n`),
+        );
       } catch (err) {
         process.stderr.write(`[scheduler] Ingestion failed: ${(err as Error).message}\n`);
       }

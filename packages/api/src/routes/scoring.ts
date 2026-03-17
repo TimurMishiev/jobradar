@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { scoreJob } from '../services/scoring';
+import { scoreJob, ScoreTrigger } from '../services/scoring';
 
 export async function scoringRoutes(app: FastifyInstance) {
   // POST /api/jobs/:id/score
@@ -13,7 +13,7 @@ export async function scoringRoutes(app: FastifyInstance) {
     }
 
     try {
-      const result = await scoreJob(id);
+      const result = await scoreJob(id, ScoreTrigger.MANUAL);
       return reply.code(200).send(result);
     } catch (err) {
       const message = (err as Error).message;
