@@ -5,7 +5,7 @@ import { getLocalUser, getOrCreateLocalUser } from '../lib/user';
 import { enrichWorkdayJob } from '../services/workdayEnrich';
 import { fetchSignalsContext, computeSignals } from '../lib/opportunitySignals';
 
-const VALID_ACTIONS = ['SAVED', 'IGNORED', 'APPLIED'] as const;
+const VALID_ACTIONS = ['SAVED', 'IGNORED', 'APPLIED', 'INTERVIEW', 'OFFER', 'REJECTED'] as const;
 type JobAction = (typeof VALID_ACTIONS)[number];
 
 const VALID_REMOTE_TYPES = new Set(['remote', 'hybrid', 'onsite', 'unknown']);
@@ -190,5 +190,26 @@ export async function jobRoutes(app: FastifyInstance) {
     });
 
     return reply.code(204).send();
+  });
+
+  // PATCH /api/jobs/:id/notes — update notes on an existing action without changing stage
+  app.patch('/:id/notes', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const body = request.body as { notes?: unknown };
+    const notes = typeof body.notes === 'string' ? body.notes.slice(0, NOTES_MAX_LENGTH).trim() : '';
+
+    const user = await getOrCreateLocalUser();
+
+    const existing = await prisma.userJobAction.findUnique({
+      where: { userId_jobId: { userId: user.id, jobId: id } },
+    });
+    if (!existing) return reply.code(404).send({ error: 'No action found for this job' });
+
+    const result = await prisma.userJobAction.update({
+      where: { id: existing.id },
+      data: { notes: notes || null },
+    });
+
+    return result;
   });
 }

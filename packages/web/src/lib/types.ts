@@ -1,6 +1,7 @@
 import type { NormalizedJob } from '@jobradar/shared';
 
-export type JobAction = 'SAVED' | 'IGNORED' | 'APPLIED';
+export type JobAction = 'SAVED' | 'IGNORED' | 'APPLIED' | 'INTERVIEW' | 'OFFER' | 'REJECTED';
+export type TrackerStage = 'SAVED' | 'APPLIED' | 'INTERVIEW' | 'OFFER' | 'REJECTED';
 
 export interface UserJobAction {
   id: string;

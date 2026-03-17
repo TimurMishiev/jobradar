@@ -141,6 +141,9 @@ enum JobAction {
   SAVED
   IGNORED
   APPLIED
+  INTERVIEW
+  OFFER
+  REJECTED
 }
 
 // ─── Agent Insights ───────────────────────────────────────────────────────────
