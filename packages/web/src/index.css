@@ -771,6 +771,12 @@ input, select, textarea { font: inherit; }
 .match-reason--gap { color: var(--text-secondary); }
 .match-reason--gap .match-reason-icon { color: var(--text-disabled); }
 
+.score-freshness {
+  font-size: 11px;
+  color: var(--text-disabled);
+  margin: 4px 0 12px;
+}
+
 /* ─── Job description ─────────────────────────────────────────────────────────── */
 
 .job-description { margin-top: 24px; }

@@ -5,7 +5,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { randomUUID } from 'crypto';
 import pdfParse from 'pdf-parse';
-import { scoreUnscoredJobs } from '../services/scoring';
+import { rescoreAllJobs } from '../services/scoring';
 
 const UPLOADS_DIR = path.join(__dirname, '../../uploads/resumes');
 const MAX_LABEL_LENGTH = 100;
@@ -134,8 +134,8 @@ export async function resumeRoutes(app: FastifyInstance) {
       },
     });
 
-    // New default resume — rescore unscored jobs in the background
-    setImmediate(() => scoreUnscoredJobs().catch(() => {}));
+    // New default resume — rescore ALL jobs so scores reflect the new resume
+    setImmediate(() => rescoreAllJobs().catch(() => {}));
 
     return updated;
   });

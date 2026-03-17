@@ -77,6 +77,7 @@ export async function scoreJob(jobId: string): Promise<{
   summary: string | null;
   modelUsed: string | null;
   createdAt: Date;
+  updatedAt: Date;
 }> {
   const client = getClient();
 
@@ -183,7 +184,7 @@ export async function scoreUnscoredJobs(): Promise<void> {
     },
     select: { id: true },
     orderBy: { postedAt: 'desc' },
-    take: 50, // cap per run to avoid hammering the API
+    take: 50,
   });
 
   for (const job of jobs) {
@@ -191,6 +192,29 @@ export async function scoreUnscoredJobs(): Promise<void> {
       await scoreJob(job.id);
     } catch {
       // Individual failures are non-fatal — continue scoring the rest
+    }
+  }
+}
+
+// Rescore ALL jobs with descriptions — used when profile or resume changes significantly.
+// Scores most recent jobs first; no cap.
+export async function rescoreAllJobs(): Promise<void> {
+  if (!process.env.OPENAI_API_KEY) return;
+
+  const jobs = await prisma.job.findMany({
+    where: {
+      isActive: true,
+      descriptionNormalized: { not: null },
+    },
+    select: { id: true },
+    orderBy: { postedAt: 'desc' },
+  });
+
+  for (const job of jobs) {
+    try {
+      await scoreJob(job.id);
+    } catch {
+      // Individual failures are non-fatal
     }
   }
 }

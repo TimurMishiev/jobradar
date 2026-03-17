@@ -23,6 +23,7 @@ export interface JobScore {
   missingSignals: string[];
   modelUsed: string | null;
   createdAt: string;
+  updatedAt: string;
 }
 
 // What the jobs list and detail endpoints actually return

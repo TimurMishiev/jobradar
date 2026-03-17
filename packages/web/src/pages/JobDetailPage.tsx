@@ -7,6 +7,17 @@ import ActionButtons from '../components/ActionButtons';
 import ScoreBadge from '../components/ScoreBadge';
 import { useScoreJob } from '../hooks/useScoreJob';
 
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(diff / 3_600_000);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return '1d ago';
+  return `${days}d ago`;
+}
+
 export default function JobDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -65,6 +76,7 @@ export default function JobDetailPage() {
           {score.summary && (
             <p className="score-summary">{score.summary}</p>
           )}
+          <p className="score-freshness">Scored {timeAgo(score.updatedAt)}</p>
           {score.matchReasons.length > 0 && (
             <ul className="match-reasons">
               {score.matchReasons.map((r, i) => (

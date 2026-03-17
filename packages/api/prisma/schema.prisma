@@ -113,6 +113,7 @@ model JobScore {
   summary        String?  // v1.1: 1-2 sentence human-readable summary
   modelUsed      String?
   createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@unique([jobId, resumeId])
 }

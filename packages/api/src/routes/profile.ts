@@ -2,7 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/prisma';
 import { getOrCreateLocalUser } from '../lib/user';
 import type { RemotePreference } from '@jobradar/shared';
-import { scoreUnscoredJobs } from '../services/scoring';
+import { scoreUnscoredJobs, rescoreAllJobs } from '../services/scoring';
 
 const VALID_REMOTE_PREFS: RemotePreference[] = ['REMOTE_ONLY', 'HYBRID', 'ONSITE', 'ANY'];
 
@@ -41,6 +41,9 @@ export async function profileRoutes(app: FastifyInstance) {
 
     const user = await getOrCreateLocalUser();
 
+    // Fetch existing profile to detect scoring-relevant changes
+    const existing = await prisma.userProfile.findUnique({ where: { userId: user.id } });
+
     const profile = await prisma.userProfile.upsert({
       where: { userId: user.id },
       create: {
@@ -62,8 +65,19 @@ export async function profileRoutes(app: FastifyInstance) {
       },
     });
 
-    // Kick off background scoring for any unscored jobs now that profile has changed
-    setImmediate(() => scoreUnscoredJobs().catch(() => {}));
+    // If scoring-relevant fields changed, rescore everything.
+    // Otherwise just score any new unscored jobs.
+    const scoringFieldsChanged =
+      !existing ||
+      JSON.stringify(toStringArray(body.targetTitles).sort()) !== JSON.stringify([...existing.targetTitles].sort()) ||
+      JSON.stringify(toStringArray(body.targetSkills).sort()) !== JSON.stringify([...existing.targetSkills].sort()) ||
+      JSON.stringify(toStringArray(body.preferredCompanies).sort()) !== JSON.stringify([...existing.preferredCompanies].sort());
+
+    if (scoringFieldsChanged) {
+      setImmediate(() => rescoreAllJobs().catch(() => {}));
+    } else {
+      setImmediate(() => scoreUnscoredJobs().catch(() => {}));
+    }
 
     return reply.code(200).send(profile);
   });
