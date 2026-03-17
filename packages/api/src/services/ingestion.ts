@@ -1,6 +1,7 @@
 import { prisma } from '../lib/prisma';
 import { TARGET_COMPANIES, CompanyConfig, AtsType } from '../companies';
-import { scoreNewJobs } from './scoring';
+import { scoreNewJobs, scoreUnscoredJobs } from './scoring';
+import { bulkEnrichWorkdayJobs } from './workdayEnrich';
 import { GreenhouseConnector } from '../connectors/greenhouse';
 import { LeverConnector } from '../connectors/lever';
 import { AshbyConnector } from '../connectors/ashby';
@@ -130,6 +131,13 @@ export async function runIngestion(slugFilter?: string[]): Promise<IngestionSumm
     );
     results.push(result);
   }
+
+  // After ingestion: enrich Workday descriptions in background, then score newly enriched jobs
+  setImmediate(() =>
+    bulkEnrichWorkdayJobs(100)
+      .then(() => scoreUnscoredJobs())
+      .catch((err) => console.error('[ingestion] post-ingest Workday enrich failed:', err instanceof Error ? err.message : String(err)))
+  );
 
   return {
     startedAt,

@@ -12,6 +12,25 @@ interface WorkdayDetailResponse {
   };
 }
 
+// Enrich descriptions for all Workday jobs that don't have one yet.
+// Runs in the background after ingestion; processes most-recent-first, capped per run.
+export async function bulkEnrichWorkdayJobs(limit = 100): Promise<void> {
+  const jobs = await prisma.job.findMany({
+    where: { sourceType: 'workday', isActive: true, descriptionNormalized: null },
+    select: { id: true },
+    orderBy: { postedAt: 'desc' },
+    take: limit,
+  });
+
+  for (const job of jobs) {
+    try {
+      await enrichWorkdayJob(job.id);
+    } catch (err) {
+      console.error(`[workday] bulk enrich failed ${job.id}:`, err instanceof Error ? err.message : String(err));
+    }
+  }
+}
+
 // Fetch description for a single Workday job and persist it to the DB.
 // Called lazily on first job detail open; no-ops if description already present.
 export async function enrichWorkdayJob(jobId: string): Promise<void> {
