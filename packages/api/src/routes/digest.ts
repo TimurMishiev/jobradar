@@ -21,23 +21,11 @@ export async function digestRoutes(app: FastifyInstance) {
 
     const preferredCompanies = profile?.preferredCompanies ?? [];
 
-    const jobSelect = {
-      id: true,
-      company: true,
-      title: true,
-      url: true,
-      location: true,
-      remoteType: true,
-      seniorityGuess: true,
-      postedAt: true,
-      scores: {
-        take: 1,
-        orderBy: { createdAt: 'desc' as const },
-        select: { score: true, fitCategory: true, summary: true, matchReasons: true, missingSignals: true },
-      },
-      userActions: {
-        where: { userId },
-        select: { action: true },
+    const jobInclude = {
+      omit: { rawPayload: true, descriptionRaw: true } as const,
+      include: {
+        scores: { take: 1, orderBy: { createdAt: 'desc' as const } },
+        userActions: { where: { userId } },
       },
     };
 
@@ -49,9 +37,9 @@ export async function digestRoutes(app: FastifyInstance) {
           postedAt: { gte: sevenDaysAgo },
           scores: { some: { score: { gte: 70 } } },
         },
-        orderBy: { scores: { _count: 'desc' } },
+        orderBy: { postedAt: 'desc' },
         take: 10,
-        select: jobSelect,
+        ...jobInclude,
       }),
 
       // New today: jobs posted in the last 24h
@@ -62,7 +50,7 @@ export async function digestRoutes(app: FastifyInstance) {
         },
         orderBy: { postedAt: 'desc' },
         take: 20,
-        select: jobSelect,
+        ...jobInclude,
       }),
 
       // Watchlist: recent jobs from preferred companies
@@ -75,7 +63,7 @@ export async function digestRoutes(app: FastifyInstance) {
             },
             orderBy: { postedAt: 'desc' },
             take: 10,
-            select: jobSelect,
+            ...jobInclude,
           })
         : Promise.resolve([]),
     ]);

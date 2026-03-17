@@ -16,6 +16,9 @@ export default function Nav({ theme, onToggleTheme }: Props) {
       </NavLink>
 
       <div className="nav-links">
+        <NavLink to="/digest" className={({ isActive }) => isActive ? 'active' : ''}>
+          Digest
+        </NavLink>
         <NavLink to="/feed" className={({ isActive }) => isActive ? 'active' : ''}>
           Feed
         </NavLink>

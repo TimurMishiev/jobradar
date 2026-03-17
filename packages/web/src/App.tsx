@@ -6,6 +6,7 @@ import JobDetailPage from './pages/JobDetailPage';
 import SavedPage from './pages/SavedPage';
 import AppliedPage from './pages/AppliedPage';
 import ProfilePage from './pages/ProfilePage';
+import DigestPage from './pages/DigestPage';
 import { useTheme } from './hooks/useTheme';
 
 export default function App() {
@@ -23,6 +24,7 @@ export default function App() {
             <Route path="/saved" element={<SavedPage />} />
             <Route path="/applied" element={<AppliedPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/digest" element={<DigestPage />} />
           </Routes>
         </main>
       </div>

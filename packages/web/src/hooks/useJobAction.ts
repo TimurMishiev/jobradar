@@ -8,9 +8,9 @@ export function useJobAction(job: JobWithDetails) {
   const currentAction = job.userActions[0]?.action ?? null;
 
   const invalidate = () => {
-    // Invalidate all jobs queries (feed, saved, applied) and the job detail cache
     queryClient.invalidateQueries({ queryKey: ['jobs'] });
     queryClient.invalidateQueries({ queryKey: ['job', job.id] });
+    queryClient.invalidateQueries({ queryKey: ['digest'] });
   };
 
   const setAction = useMutation({

@@ -1197,3 +1197,36 @@ input, select, textarea { font: inherit; }
 }
 
 .state-message--error { color: var(--red); }
+
+/* ─── Digest page ─────────────────────────────────────────────────────────────── */
+
+.digest-page { display: flex; flex-direction: column; gap: 40px; }
+
+.digest-section {}
+
+.digest-section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+}
+
+.digest-section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.digest-section-subtitle {
+  font-size: 12px;
+  color: var(--text-disabled);
+}
+
+.digest-empty {
+  font-size: 13px;
+  color: var(--text-faint);
+  padding: 12px 0;
+}

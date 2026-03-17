@@ -42,6 +42,13 @@ export interface Resume {
   updatedAt: string;
 }
 
+export interface DigestResponse {
+  generatedAt: string;
+  topScored: JobWithDetails[];
+  newToday: JobWithDetails[];
+  watchlist: JobWithDetails[];
+}
+
 export interface JobFeedResponse {
   data: JobWithDetails[];
   pagination: {
