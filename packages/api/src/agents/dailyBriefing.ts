@@ -1,32 +1,12 @@
-import OpenAI from 'openai';
 import { prisma } from '../lib/prisma';
 import { getLocalUser } from '../lib/user';
+import { getOpenAIClient } from '../lib/openai';
+import type { DailyBriefingPayload, BriefingTopPick, WatchlistHighlight } from '@jobradar/shared';
+
+export type { DailyBriefingPayload, BriefingTopPick, WatchlistHighlight };
 
 const MODEL = 'gpt-4o-mini';
 const OPENAI_TIMEOUT_MS = 30_000;
-
-// ─── Payload types (exported so routes and frontend types can share the shape) ─
-
-export interface BriefingTopPick {
-  jobId: string;
-  title: string;
-  company: string;
-  score: number;
-  reason: string; // 1-sentence why this is the top pick
-}
-
-export interface WatchlistHighlight {
-  company: string;
-  newRoles: number;
-  topRole: string | null;
-}
-
-export interface DailyBriefingPayload {
-  headline: string;
-  topPicks: BriefingTopPick[];
-  appliedNudge: string | null;
-  watchlistHighlights: WatchlistHighlight[];
-}
 
 export interface BriefingInsight {
   id: string;
@@ -37,10 +17,7 @@ export interface BriefingInsight {
 // ─── Agent ────────────────────────────────────────────────────────────────────
 
 export async function runDailyBriefing(): Promise<BriefingInsight> {
-  const key = process.env.OPENAI_API_KEY;
-  if (!key) throw new Error('OPENAI_API_KEY is not set');
-
-  const client = new OpenAI({ apiKey: key });
+  const client = getOpenAIClient();
 
   const user = await getLocalUser();
   if (!user) throw new Error('No user found — complete profile setup first');
@@ -86,6 +63,7 @@ export async function runDailyBriefing(): Promise<BriefingInsight> {
       where: { company: { in: preferredCompanies }, isActive: true, postedAt: { gte: sevenDaysAgo } },
       include: { scores: { take: 1, orderBy: { score: 'desc' } } },
       orderBy: { postedAt: 'desc' },
+      take: 200,
     });
 
     // Group by company

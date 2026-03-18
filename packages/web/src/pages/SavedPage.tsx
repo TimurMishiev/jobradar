@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useQueries, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '../lib/api';
+import { STALE } from '../lib/queryConfig';
 import type { JobFeedResponse, JobWithDetails, TrackerStage } from '../lib/types';
 import ScoreBadge from '../components/ScoreBadge';
 
@@ -207,7 +208,7 @@ export default function SavedPage() {
       queryKey: ['jobs', { action: stage }],
       queryFn: () =>
         apiFetch<JobFeedResponse>(`/api/jobs?action=${stage}&limit=200&postedWithin=all`),
-      staleTime: 60_000,
+      staleTime: STALE.tracker,
     })),
   });
 

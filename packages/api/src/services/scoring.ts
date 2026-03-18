@@ -1,7 +1,7 @@
-import OpenAI from 'openai';
 import { Prisma, ScoreTrigger } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { getLocalUser } from '../lib/user';
+import { getOpenAIClient } from '../lib/openai';
 
 export { ScoreTrigger };
 
@@ -18,11 +18,6 @@ interface ScoringOutput {
   summary: string;
 }
 
-function getClient(): OpenAI {
-  const key = process.env.OPENAI_API_KEY;
-  if (!key) throw new Error('OPENAI_API_KEY is not set');
-  return new OpenAI({ apiKey: key });
-}
 
 function buildPrompt(params: {
   jobTitle: string;
@@ -86,7 +81,7 @@ export async function scoreJob(jobId: string, trigger: ScoreTrigger = ScoreTrigg
   createdAt: Date;
   updatedAt: Date;
 }> {
-  const client = getClient();
+  const client = getOpenAIClient();
 
   const job = await prisma.job.findUnique({ where: { id: jobId } });
   if (!job) throw new Error('Job not found');

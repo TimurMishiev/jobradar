@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { apiFetch } from '../lib/api';
 import type { JobFeedResponse, JobScore } from '../lib/types';
+import { STALE } from '../lib/queryConfig';
 import JobCard from '../components/JobCard';
 import Select from '../components/Select';
 
@@ -44,11 +45,24 @@ export default function FeedPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [nlQuery, setNlQuery] = useState(searchParams.get('search') ?? '');
   const [isParsing, setIsParsing] = useState(false);
+  const [draftTitle, setDraftTitle] = useState(searchParams.get('title') ?? '');
+  const [draftLocation, setDraftLocation] = useState(searchParams.get('location') ?? '');
+
+  // Debounce title/location — fire setParam only after 400 ms of no typing
+  useEffect(() => {
+    const id = setTimeout(() => setParam('title', draftTitle), 400);
+    return () => clearTimeout(id);
+  }, [draftTitle]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const id = setTimeout(() => setParam('location', draftLocation), 400);
+    return () => clearTimeout(id);
+  }, [draftLocation]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { data: companiesData } = useQuery({
     queryKey: ['companies'],
     queryFn: () => apiFetch<Array<{ name: string; slug: string }>>('/api/ingest/companies'),
-    staleTime: Infinity,
+    staleTime: STALE.companies,
   });
   const companies = companiesData?.map((c) => c.name).sort() ?? [];
 
@@ -81,6 +95,8 @@ export default function FeedPage() {
 
   const clearFilters = () => {
     setNlQuery('');
+    setDraftTitle('');
+    setDraftLocation('');
     setSearchParams(new URLSearchParams({ postedWithin: '7' }));
   };
 
@@ -99,9 +115,13 @@ export default function FeedPage() {
       const hasAnyFilter = parsed.title || parsed.location || parsed.company || parsed.seniority || parsed.remoteType;
       if (!hasAnyFilter) {
         // GPT extracted nothing — treat the raw query as a title keyword search
+        setDraftTitle(q);
+        setDraftLocation('');
         const next = new URLSearchParams({ postedWithin: '7', search: q, title: q });
         setSearchParams(next);
       } else {
+        setDraftTitle(parsed.title ?? '');
+        setDraftLocation(parsed.location ?? '');
         const next = new URLSearchParams({ postedWithin: '7', search: q });
         if (parsed.title) next.set('title', parsed.title);
         if (parsed.location) next.set('location', parsed.location);
@@ -112,6 +132,7 @@ export default function FeedPage() {
       }
     } catch {
       // Fallback: treat the query as a title keyword search
+      setDraftTitle(q);
       const next = new URLSearchParams(searchParams);
       next.set('title', q);
       next.set('search', q);
@@ -137,6 +158,7 @@ export default function FeedPage() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['jobs', { company, remoteType, seniority, postedWithin, page, location, title }],
     queryFn: () => apiFetch<JobFeedResponse>(`/api/jobs?${params}`),
+    staleTime: STALE.feed,
   });
 
   const queryClient = useQueryClient();
@@ -227,16 +249,16 @@ export default function FeedPage() {
           className="filter-text-input"
           type="text"
           placeholder="Role / title"
-          value={title}
-          onChange={(e) => setParam('title', e.target.value)}
+          value={draftTitle}
+          onChange={(e) => setDraftTitle(e.target.value)}
         />
 
         <input
           className="filter-text-input"
           type="text"
           placeholder="Location (e.g. US, New York)"
-          value={location}
-          onChange={(e) => setParam('location', e.target.value)}
+          value={draftLocation}
+          onChange={(e) => setDraftLocation(e.target.value)}
         />
 
         {hasFilters && (

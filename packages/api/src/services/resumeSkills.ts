@@ -1,5 +1,5 @@
-import OpenAI from 'openai';
 import { prisma } from '../lib/prisma';
+import { getOpenAIClient } from '../lib/openai';
 
 const MODEL = 'gpt-4o-mini';
 const OPENAI_TIMEOUT_MS = 20_000;
@@ -13,8 +13,7 @@ export async function extractSkillsFromResume(
   resumeId: string,
   { force = false }: { force?: boolean } = {},
 ): Promise<string[]> {
-  const key = process.env.OPENAI_API_KEY;
-  if (!key) return [];
+  if (!process.env.OPENAI_API_KEY) return [];
 
   const resume = await prisma.resume.findUnique({
     where: { id: resumeId },
@@ -24,7 +23,7 @@ export async function extractSkillsFromResume(
   if (!resume?.textContent) return [];
   if (!force && resume.extractedSkills.length > 0) return resume.extractedSkills;
 
-  const client = new OpenAI({ apiKey: key });
+  const client = getOpenAIClient();
 
   const prompt = `Extract all technical skills, tools, frameworks, libraries, programming languages, and platforms mentioned in this resume. Do not include soft skills, job titles, company names, or education degrees.
 

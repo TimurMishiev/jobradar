@@ -1,28 +1,15 @@
-import OpenAI from 'openai';
 import { prisma } from '../lib/prisma';
 import { getLocalUser } from '../lib/user';
+import { getOpenAIClient } from '../lib/openai';
+import type { GapAnalysisPayload, SkillGap } from '@jobradar/shared';
+
+export type { GapAnalysisPayload, SkillGap };
 
 const MODEL = 'gpt-4o-mini';
 const OPENAI_TIMEOUT_MS = 30_000;
 const MIN_SCORE = 60;        // jobs below this threshold are excluded from analysis
 const MAX_JOBS = 40;         // cap to keep the prompt compact
 const MIN_JOBS_WITH_GAPS = 3; // minimum before we call GPT
-
-// ─── Payload types ────────────────────────────────────────────────────────────
-
-export interface SkillGap {
-  skill: string;    // e.g. "GraphQL"
-  count: number;    // number of high-scoring jobs that list this as missing
-  context: string;  // brief note, e.g. "common in full-stack and API roles"
-}
-
-export interface GapAnalysisPayload {
-  summary: string;
-  topGaps: SkillGap[];      // up to 6, ordered by count desc
-  recommendation: string;   // 1-2 actionable sentences
-  basedOnJobCount: number;
-  minScore: number;
-}
 
 export interface GapAnalysisInsight {
   id: string;
@@ -33,10 +20,7 @@ export interface GapAnalysisInsight {
 // ─── Agent ────────────────────────────────────────────────────────────────────
 
 export async function runGapAnalysis(): Promise<GapAnalysisInsight> {
-  const key = process.env.OPENAI_API_KEY;
-  if (!key) throw new Error('OPENAI_API_KEY is not set');
-
-  const client = new OpenAI({ apiKey: key });
+  const client = getOpenAIClient();
 
   const user = await getLocalUser();
   if (!user) throw new Error('No user found');

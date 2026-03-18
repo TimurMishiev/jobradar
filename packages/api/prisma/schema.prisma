@@ -163,6 +163,7 @@ model ScoreHistory {
   createdAt     DateTime     @default(now())
 
   @@index([jobId])
+  @@index([jobId, userId])
   @@index([userId, createdAt])
 }
 

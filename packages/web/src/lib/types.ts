@@ -1,5 +1,17 @@
 import type { NormalizedJob } from '@jobradar/shared';
 
+// Re-export shared payload types so the rest of the web codebase imports from one place
+export type {
+  DailyBriefingPayload,
+  BriefingTopPick,
+  WatchlistHighlight,
+  GapAnalysisPayload,
+  SkillGap,
+  CompanySignalKind,
+  CompanySignal,
+  CompanySignalsPayload,
+} from '@jobradar/shared';
+
 export type JobAction = 'SAVED' | 'IGNORED' | 'APPLIED' | 'INTERVIEW' | 'OFFER' | 'REJECTED';
 export type TrackerStage = 'SAVED' | 'APPLIED' | 'INTERVIEW' | 'OFFER' | 'REJECTED';
 
@@ -40,7 +52,6 @@ export interface OpportunitySignal {
   label: string;
 }
 
-// What the jobs list and detail endpoints actually return
 export interface JobWithDetails extends NormalizedJob {
   scores: JobScore[];
   userActions: UserJobAction[];
@@ -59,51 +70,22 @@ export interface Resume {
   updatedAt: string;
 }
 
-export interface BriefingTopPick {
-  jobId: string;
-  title: string;
-  company: string;
-  score: number;
-  reason: string;
-}
-
-export interface WatchlistHighlight {
-  company: string;
-  newRoles: number;
-  topRole: string | null;
-}
-
-export interface DailyBriefingPayload {
-  headline: string;
-  topPicks: BriefingTopPick[];
-  appliedNudge: string | null;
-  watchlistHighlights: WatchlistHighlight[];
-}
-
 export interface BriefingInsightResponse {
   id: string;
   generatedAt: string;
-  payload: DailyBriefingPayload;
-}
-
-export interface SkillGap {
-  skill: string;
-  count: number;
-  context: string;
-}
-
-export interface GapAnalysisPayload {
-  summary: string;
-  topGaps: SkillGap[];
-  recommendation: string;
-  basedOnJobCount: number;
-  minScore: number;
+  payload: import('@jobradar/shared').DailyBriefingPayload;
 }
 
 export interface GapAnalysisInsightResponse {
   id: string;
   generatedAt: string;
-  payload: GapAnalysisPayload;
+  payload: import('@jobradar/shared').GapAnalysisPayload;
+}
+
+export interface CompanySignalsInsightResponse {
+  id: string;
+  generatedAt: string;
+  payload: import('@jobradar/shared').CompanySignalsPayload;
 }
 
 export interface DigestResponse {
@@ -121,30 +103,6 @@ export interface JobFeedResponse {
     total: number;
     pages: number;
   };
-}
-
-// ─── Company Signals ──────────────────────────────────────────────────────────
-
-export type CompanySignalKind = 'HIRING_CLUSTER' | 'SKILL_MATCH_CLUSTER';
-
-export interface CompanySignal {
-  company: string;
-  kind: CompanySignalKind;
-  description: string;
-  roleCount: number;
-  topRole: string | null;
-}
-
-export interface CompanySignalsPayload {
-  signals: CompanySignal[];
-  generatedAt: string;
-  basedOnDays: number;
-}
-
-export interface CompanySignalsInsightResponse {
-  id: string;
-  generatedAt: string;
-  payload: CompanySignalsPayload;
 }
 
 // ─── Insight Timeline ─────────────────────────────────────────────────────────

@@ -1,23 +1,8 @@
 import { prisma } from '../lib/prisma';
 import { getLocalUser } from '../lib/user';
+import type { CompanySignalKind, CompanySignal, CompanySignalsPayload } from '@jobradar/shared';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-export type CompanySignalKind = 'HIRING_CLUSTER' | 'SKILL_MATCH_CLUSTER';
-
-export interface CompanySignal {
-  company: string;
-  kind: CompanySignalKind;
-  description: string;
-  roleCount: number;
-  topRole: string | null;
-}
-
-export interface CompanySignalsPayload {
-  signals: CompanySignal[];
-  generatedAt: string;
-  basedOnDays: number;
-}
+export type { CompanySignalKind, CompanySignal, CompanySignalsPayload };
 
 export interface CompanySignalsInsight {
   id: string;

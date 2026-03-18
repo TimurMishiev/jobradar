@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch, ApiError } from '../lib/api';
+import { STALE } from '../lib/queryConfig';
 import type {
   DigestResponse,
   JobWithDetails,
@@ -63,7 +64,7 @@ function BriefingPanel() {
         if (err instanceof ApiError && err.status === 404) return null;
         throw err;
       }),
-    staleTime: 10 * 60_000,
+    staleTime: STALE.briefing,
     retry: false,
   });
 
@@ -186,7 +187,7 @@ function GapAnalysisPanel() {
         if (err instanceof ApiError && err.status === 404) return null;
         throw err;
       }),
-    staleTime: 30 * 60_000,
+    staleTime: STALE.gapAnalysis,
     retry: false,
   });
 
@@ -293,7 +294,7 @@ function CompanySignalsPanel() {
         if (err instanceof ApiError && err.status === 404) return null;
         throw err;
       }),
-    staleTime: 10 * 60_000,
+    staleTime: STALE.companySignals,
     retry: false,
   });
 
@@ -416,7 +417,7 @@ function InsightTimeline() {
   const { data, isLoading } = useQuery({
     queryKey: ['insight-timeline'],
     queryFn: () => apiFetch<InsightTimelineResponse>('/api/insights?limit=15'),
-    staleTime: 5 * 60_000,
+    staleTime: STALE.insightTimeline,
   });
 
   if (isLoading) return null;
@@ -467,7 +468,7 @@ export default function DigestPage() {
   const { data, isLoading, isError, dataUpdatedAt } = useQuery({
     queryKey: ['digest'],
     queryFn: () => apiFetch<DigestResponse>('/api/digest'),
-    staleTime: 5 * 60_000,
+    staleTime: STALE.digest,
   });
 
   if (isLoading) return <p className="state-message">Loading digest...</p>;
