@@ -51,9 +51,6 @@ COPY --from=builder /app/packages/api/dist packages/api/dist
 # Copy built web static assets (served by Fastify in production)
 COPY --from=builder /app/packages/web/dist packages/web/dist
 
-# Resume upload directory — local filesystem fallback (swap for S3 in v1.8)
-RUN mkdir -p packages/api/uploads/resumes
-
 EXPOSE 3000
 
 # Run migrations then start the server

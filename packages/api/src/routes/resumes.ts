@@ -1,14 +1,12 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/prisma';
 import { getLocalUser, getOrCreateLocalUser } from '../lib/user';
-import * as fs from 'fs/promises';
-import * as path from 'path';
 import { randomUUID } from 'crypto';
 import pdfParse from 'pdf-parse';
 import { rescoreAllJobs, ScoreTrigger } from '../services/scoring';
 import { extractSkillsFromResume } from '../services/resumeSkills';
+import { uploadFile, deleteFile } from '../lib/storage';
 
-const UPLOADS_DIR = path.join(__dirname, '../../uploads/resumes');
 const MAX_LABEL_LENGTH = 100;
 
 export async function resumeRoutes(app: FastifyInstance) {
@@ -61,18 +59,10 @@ export async function resumeRoutes(app: FastifyInstance) {
       // If extraction fails, continue without text — scoring will skip it
     }
 
-    // Save file to disk
-    const userDir = path.join(UPLOADS_DIR, user.id);
-    await fs.mkdir(userDir, { recursive: true });
+    // Upload file to storage (R2 in production, local filesystem in dev)
     const fileId = randomUUID();
-    const storagePath = path.join(userDir, `${fileId}.pdf`);
-
-    // Guard against path traversal (userId is always a cuid, but be explicit)
-    if (!path.resolve(storagePath).startsWith(path.resolve(UPLOADS_DIR))) {
-      return reply.code(400).send({ error: 'Invalid path' });
-    }
-
-    await fs.writeFile(storagePath, buffer);
+    const storagePath = `resumes/${user.id}/${fileId}.pdf`;
+    await uploadFile(storagePath, buffer, 'application/pdf');
 
     const rawLabel = data.fields?.label;
     const labelValue = rawLabel && typeof rawLabel === 'object' && 'value' in rawLabel
@@ -190,8 +180,8 @@ export async function resumeRoutes(app: FastifyInstance) {
       return reply.code(404).send({ error: 'Resume not found' });
     }
 
-    // Delete file from disk (best-effort)
-    fs.unlink(existing.storagePath).catch(() => {});
+    // Delete file from storage (best-effort)
+    deleteFile(existing.storagePath).catch(() => {});
 
     await prisma.resume.delete({ where: { id } });
 
